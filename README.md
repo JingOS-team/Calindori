@@ -47,9 +47,9 @@ JingOS :
 
 * Home page: https://www.jingos.com/
 
-* Project page: https://invent.kde.org/plasma-mobile/calindori
+* Project page: https://github.com/JingOS-team/jing-calendar/
 
-* Issues: https://invent.kde.org/plasma-mobile/calindori/-/issues
+* Issues: https://github.com/JingOS-team/jing-calendar/issues
 
 * Development channel: https://forum.jingos.com/
 
