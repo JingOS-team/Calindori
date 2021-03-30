@@ -37,8 +37,11 @@ install(FILES
     DESTINATION ${KDE_INSTALL_AUTOSTARTDIR}
     )
 
+install(FILES
+    org.kde.calindac.xml
+    org.kde.wakeupmanager.PowerManagement.xml
+    DESTINATION ${DBUS_INTERFACES_INSTALL_DIR}
+    )
+
 install(FILES calindac.notifyrc DESTINATION ${KNOTIFYRC_INSTALL_DIR})
 
-set(SERV_EXEC ${KDE_INSTALL_FULL_BINDIR}/calindac)
-configure_file(org.kde.calindac.service.in ${CMAKE_CURRENT_BINARY_DIR}/org.kde.calindac.service)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.kde.calindac.service DESTINATION ${KDE_INSTALL_FULL_DBUSSERVICEDIR})

@@ -7,7 +7,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
-import org.kde.kirigami 2.12 as Kirigami
+import org.kde.kirigami 2.3 as Kirigami
 import org.kde.calindori 0.1 as Calindori
 
 Kirigami.Page {
@@ -16,57 +16,57 @@ Kirigami.Page {
     enum Mode {
         Create,
         AddExisting,
-        Edit
+        Import
     }
-
-    property var loadedCalendar
     property alias calendarName: nameInput.text
-    property alias isActive: activeFlag.checked
-    property alias ownerName: ownerNameInput.text
-    property alias ownerEmail: ownerEmail.text
+    property alias activeCalendar: isactive.checked
     property int mode: CalendarEditor.Mode.Create
     property url calendarFile
 
-    signal calendarEditorSaved
-    signal calendarEditorCancelled
+    signal calendarAdded
+    signal calendarAddCanceled
 
-    title: mode === CalendarEditor.Mode.Edit ? calendarName : i18n("New calendar")
+    title: i18n("New calendar")
 
-    function addLocalCalendarCfgEntry() {
-        var insertResult = _calindoriConfig.addInternalCalendar(root.calendarName, root.ownerName, root.ownerEmail);
+    function importCalendar() {
+        var importResult = calendarController.importCalendar(root.calendarName, root.calendarFile);
 
-        if(!(insertResult.success)) {
-            validationFooter.text = insertResult.reason;
-            validationFooter.visible = true;
+        if(!(importResult.success)) {
+            showPassiveNotification(i18n("Calendar not imported. %1",importResult.reason));
             return;
         }
 
+        addLocalCalendarCfgEntry();
+    }
 
-        if(root.isActive) {
-            _calindoriConfig.isActive = root.calendarName;
+    function addLocalCalendarCfgEntry() {
+        var insertResult = _calindoriConfig.addInternalCalendar(root.calendarName);
+
+        if(!(insertResult.success)) {
+            showPassiveNotification(insertResult.reason);
+            return;
         }
 
-        validationFooter.visible = false;
-        calendarEditorSaved();
+        if(root.activeCalendar) {
+            _calindoriConfig.activeCalendar = root.calendarName;
+        }
+
+        calendarAdded();
     }
 
     function addSharedCalendarCfgEntry() {
-        var addSharedResult = _calindoriConfig.addExternalCalendar(root.calendarName, root.ownerName, root.ownerEmail,  root.calendarFile);
+        var addSharedResult = _calindoriConfig.addExternalCalendar(root.calendarName, calendarFile);
 
         if(!(addSharedResult.success)) {
-            validationFooter.text = addSharedResult.reason;
-            validationFooter.visible = true;
+            showPassiveNotification(addSharedResult.reason);
             return;
         }
 
-        _calindoriConfig.setOwnerInfo(root.calendarName, root.ownerName, root.ownerEmail);
-
-        if(root.isActive) {
-            _calindoriConfig.isActive = root.calendarName;
+        if(root.activeCalendar) {
+            _calindoriConfig.activeCalendar = root.calendarName;
         }
 
-        validationFooter.visible = false;
-        calendarEditorSaved();
+        calendarAdded();
     }
 
     Kirigami.FormLayout {
@@ -77,44 +77,24 @@ Kirigami.Page {
         Controls2.TextField {
             id: nameInput
 
-            visible: root.mode !== CalendarEditor.Mode.Edit
-            Kirigami.FormData.label: i18n("Calendar:")
+            Kirigami.FormData.label: i18n("Name:")
         }
 
         Controls2.CheckBox {
-            id: activeFlag
+            id: isactive
 
-            visible: root.mode !== CalendarEditor.Mode.Edit
             Kirigami.FormData.label: i18n("Active:")
         }
 
         Controls2.Label {
             id: fileName
 
-            property bool showFileName: (root.mode == CalendarEditor.Mode.AddExisting) && (root.calendarFile != "")
+            property bool showFileName: ( (root.mode == CalendarEditor.Mode.Import) || (root.mode == CalendarEditor.Mode.AddExisting)) && (root.calendarFile != "")
 
             visible: showFileName
             Kirigami.FormData.label: i18n("File:")
-            text: showFileName ? Calindori.CalendarController.fileNameFromUrl(root.calendarFile) : ""
+            text: showFileName ? calendarController.fileNameFromUrl(root.calendarFile) : ""
         }
-
-        Kirigami.Separator {
-            Kirigami.FormData.label: i18n("Owner")
-            Kirigami.FormData.isSection: true
-        }
-
-        Controls2.TextField {
-            id: ownerNameInput
-
-            Kirigami.FormData.label: i18n("Name:")
-        }
-
-        Controls2.TextField {
-            id: ownerEmail
-
-            Kirigami.FormData.label: i18n("Email:")
-        }
-
     }
 
     actions {
@@ -126,7 +106,7 @@ Kirigami.Page {
             icon.name : "dialog-cancel"
 
             onTriggered: {
-                calendarEditorCancelled();
+                calendarAddCanceled();
             }
         }
 
@@ -134,31 +114,27 @@ Kirigami.Page {
             id: saveAction
 
             text: i18n("Save")
-            enabled: (mode == CalendarEditor.Mode.AddExisting) ? (root.calendarName != "" && root.calendarFile != "") : (root.calendarName != "")
+            enabled: ((mode == CalendarEditor.Mode.AddExisting) || (mode == CalendarEditor.Mode.Import)) ? (root.calendarName != "" && root.calendarFile != "") : (root.calendarName != "")
 
             icon.name : "dialog-ok"
 
             onTriggered: {
-                if ((mode === CalendarEditor.Mode.AddExisting) || (mode === CalendarEditor.Mode.Create))  {
-                    var canAddResult = _calindoriConfig.canAddCalendar(root.calendarName);
+                var canAddResult = _calindoriConfig.canAddCalendar(root.calendarName);
 
-                    if(canAddResult && !(canAddResult.success)) {
-                        validationFooter.text = canAddResult.reason;
-                        validationFooter.visible = true;
-                        return;
-                    }
+                if(canAddResult && !(canAddResult.success)) {
+                    showPassiveNotification(canAddResult.reason);
+                    return;
                 }
 
                 switch(mode) {
+                    case CalendarEditor.Mode.Import:
+                        importCalendar();
+                        break;
                     case CalendarEditor.Mode.AddExisting:
                         addSharedCalendarCfgEntry();
                         break;
                     case CalendarEditor.Mode.Create:
                         addLocalCalendarCfgEntry();
-                        break;
-                    case CalendarEditor.Mode.Edit:
-                        _calindoriConfig.setOwnerInfo(root.calendarName, root.ownerName, root.ownerEmail);
-                        calendarEditorSaved();
                         break;
                     default:
                         return;
@@ -169,8 +145,8 @@ Kirigami.Page {
         right: Kirigami.Action {
             id: addFile
 
-            visible: root.mode == CalendarEditor.Mode.AddExisting
-            text: i18n("Add")
+            visible: (root.mode == CalendarEditor.Mode.Import) || (root.mode == CalendarEditor.Mode.AddExisting)
+            text: (root.mode == CalendarEditor.Mode.Import) ? i18n("Import") : i18n("Add")
             icon.name: "list-add"
 
             onTriggered: fileChooser.open()
@@ -178,18 +154,14 @@ Kirigami.Page {
 
     }
 
-    footer: Kirigami.InlineMessage {
-        id: validationFooter
-
-        showCloseButton: true
-        type: Kirigami.MessageType.Warning
-        visible: false
-    }
-
     FileChooser {
         id: fileChooser
 
         onAccepted: root.calendarFile = fileUrl
+    }
+
+    Calindori.LocalCalendar {
+        id: calendarController
     }
 
 }

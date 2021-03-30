@@ -1,5 +1,6 @@
 /*
- * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -29,9 +30,7 @@ QHash<int, QByteArray> IncidenceAlarmsModel::roleNames() const
 void IncidenceAlarmsModel::removeAlarm(const int row)
 {
     beginRemoveRows(QModelIndex(), row, row);
-
     mAlarms.removeAt(row);
-
     endRemoveRows();
 }
 
@@ -110,14 +109,14 @@ void IncidenceAlarmsModel::loadPersistentAlarms()
 
     LocalCalendar *localCalendar = mAlarmProperties["calendar"].value<LocalCalendar *>();
     QString uid = mAlarmProperties["uid"].toString();
-    Calendar::Ptr memCalendar;
+    MemoryCalendar::Ptr memCalendar;
     Incidence::Ptr alarmIncidence;
     Alarm::List persistentAlarms = Alarm::List();
 
     qDebug() << "\nloadPersistentAlarms: uid" << uid;
 
     if (localCalendar != nullptr) {
-        memCalendar = localCalendar->calendar();
+        memCalendar = localCalendar->memorycalendar();
         alarmIncidence = memCalendar->incidence(uid);
     }
 
@@ -153,15 +152,15 @@ QString IncidenceAlarmsModel::alarmStartOffsetType(const int idx) const
     int durationType = alarm["startOffsetType"].value<int>();
 
     switch (durationType) {
-    case Duration::Type::Days: {
-        return QString(i18n("days before start"));
-    }
-    case Duration::Type::Seconds: {
-        return QString(i18n("seconds before start"));
-    }
-    default: {
-        return QString();
-    }
+        case Duration::Type::Days: {
+            return QString(i18n("days before start"));
+        }
+        case Duration::Type::Seconds: {
+            return QString(i18n("seconds before start"));
+        }
+        default: {
+            return QString();
+        }
     }
 }
 
@@ -190,36 +189,39 @@ QVariantList IncidenceAlarmsModel::alarms() const
 {
     return mAlarms;
 }
+int IncidenceAlarmsModel::getAlarmsCount() const
+{
+    return mAlarms.count();
+}
 
 QString IncidenceAlarmsModel::displayText(const int idx) const
 {
+    if(getAlarmsCount() == 0 ){
+        return i18n("None");
+    }
+
     QHash<QString, QVariant> alarm = mAlarms.at(idx).value<QHash<QString, QVariant>>();
 
     int durationType = alarm["startOffsetType"].value<int>();
     int durationValue = -1 * alarm["startOffsetValue"].value<int>();
 
     if (durationValue == 0) {
-        return i18n("At start time");
+        return i18n("At start of event");
     }
 
-    // Duration in days
     if (durationType == Duration::Type::Days) {
-        return i18np("1 day before start", "%1 days before start", durationValue);
+        return i18np("1 day before", "%1 days before", durationValue);
     }
 
-    // Duration in seconds
-    if ((durationValue % 86400) == 0) {
-        return i18np("1 day before start", "%1 days before start", durationValue / 86400);
-    }
+    QString alarmText;
+    int durDays = durationValue / 86400;
+    alarmText = (durDays != 0) ? i18np("1 day", "%1 days", durDays) : QString();
+    int durHours = (durationValue - durDays * 86400) / 3600;
+    alarmText = (durHours != 0) ? QString("%1 %2").arg(alarmText, i18np("1 hour", "%1 hours", durHours)) : alarmText;
+    int durMins = (durationValue - durHours * 3600 - durDays * 86400) / 60 ;
+    alarmText = (durMins != 0) ? QString("%1 %2").arg(alarmText, i18np("1 minute", "%1 minutes", durMins)) : alarmText;
+    int durSeconds = durationValue - durMins * 60 - durHours * 3600 - durDays * 86400;
+    alarmText = (durSeconds != 0) ? QString("%1 %2").arg(alarmText, i18np("1 second", "%1 seconds", durSeconds)) : alarmText;
 
-    if ((durationValue % 3600) == 0) {
-        return i18np("1 hour before start", "%1 hours before start", durationValue / 3600);
-    }
-
-    if ((durationValue % 60) == 0) {
-        return i18np("1 minute before start", "%1 minutes before start", durationValue / 60);
-    }
-
-    return i18np("1 second before start", "%1 seconds before start", durationValue);
+    return QString("%1 %2").arg(alarmText, i18n("before"));
 }
-

@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2018 Dimitris Kardarakos <dimkard@posteo.net>
+ * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
+import QtQuick.Layouts 1.3
 import org.kde.kirigami 2.0 as Kirigami
 
 /*
@@ -22,15 +24,12 @@ Item {
     property int days: 7
     property int weeks: 6
     property date currentDate: new Date()
-    property int dayRectWidth: Kirigami.Units.gridUnit * 2.5
+    property int dayRectWidth: calendarMonthView.width / 7
     property date selectedDate: new Date()
-    property int selectedDayTodosCount: 0
-    property int selectedDayEventsCount: 0
     property string displayedMonthName
     property int displayedYear
-    property var reloadSelectedDate: function() {}
     property var applicationLocale: Qt.locale()
-    property bool loadAsync: false
+
 
     /**
      * A model that provides:
@@ -40,117 +39,141 @@ Item {
      * 3. yearNumber
      */
     property var daysModel
-
     property bool showHeader: false
     property bool showMonthName: true
     property bool showYear: true
 
-    onSelectedDateChanged: reloadSelectedDate()
+    width: mainWindow.width * 0.7
 
-    Loader {
-        id: monthViewLoader
-
-        anchors.centerIn: parent
-
-        visible: status == Loader.Ready
-        sourceComponent: mainViewComponent
-        asynchronous: root.loadAsync
+    function popShowMessage(model, incidenceAlarmsModel) {
+        popupEventEditor.startDt = model.dtstart
+        popupEventEditor.uid = model.uid
+        popupEventEditor.incidenceData = model
+        popupEventEditor.incidenceAlarmsModel = incidenceAlarmsModel
+        popupEventEditor.loadNewDate()
+        popupEventEditor.open()
     }
 
-    Controls2.BusyIndicator {
-        anchors.centerIn: parent
-
-        running: !monthViewLoader.visible
-        implicitWidth: Kirigami.Units.iconSizes.enormous
-        implicitHeight: width
-
+    Component.onCompleted: {
+        rowMain.dayClickFindIndex(root.selectedDate)
     }
 
-    Component {
-        id: mainViewComponent
+    ColumnLayout {
+        id: cView
 
-        Column {
-            id: mainView
+        width: root.width
+        Layout.fillWidth: true
 
-            anchors.centerIn: parent
+        /**
+         * Optional header on top of the table
+         * that displays the current date and
+         * the amount of the day's tasks
+         */
+        CustomCalendarHeader {
+            id: calendarHeader
 
-            spacing: Kirigami.Units.smallSpacing
+            Layout.topMargin: calendarMonthView.width / 16.75
+            Layout.rightMargin: calendarMonthView.width / 21.6
+            Layout.leftMargin: calendarMonthView.width / 26.8
+            Layout.bottomMargin: calendarMonthView.width / 26.8
 
-            /**
-            * Optional header on top of the table
-            * that displays the current date and
-            * the amount of the day's tasks
-            */
-            CalendarHeader {
-                id: calendarHeader
+            yearNumber: daysModel.year
+        }
 
-                applicationLocale: root.applicationLocale
-                headerDate: root.selectedDate
-                headerTodosCount: root.selectedDayTodosCount
-                headerEventsCount: root.selectedDayEventsCount
-                visible: root.showHeader
-            }
+        /**
+         * Styled week day names of the days' calendar grid
+         * E.g.
+         * Mon Tue Wed ...
+         */
+        RowLayout {
+            id: rwDate
 
+            Layout.fillWidth: true
 
-            Row {
+            spacing: 0
 
-                Controls2.Label {
-                    visible: showMonthName
-                    font.pointSize: Kirigami.Units.fontMetrics.font.pointSize * 1.5
-                    text: displayedMonthName
-                }
+            Repeater {
+                model: root.days
 
-                Controls2.Label {
-                    visible: showYear
-                    font.pointSize: Kirigami.Units.fontMetrics.font.pointSize * 1.5
-                    text: (showMonthName ? " " : "" ) + displayedYear
-                }
-            }
+                delegate: Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: weekLabel.height
 
-            /**
-            * Styled week day names of the days' calendar grid
-            * E.g.
-            * Mon Tue Wed ...
-            */
-            Row {
-                spacing: 0
+                    width: root.dayRectWidth
 
-                Repeater {
-                    model: root.days
-                    delegate:
-                        Rectangle {
-                            width: root.dayRectWidth
-                            height: width
-                            color: Kirigami.Theme.disabledTextColor
-                            opacity: 0.8
+                    opacity: 0.8
 
-                            Controls2.Label {
-                                anchors.centerIn: parent
-                                color: Kirigami.Theme.textColor
-                                text: root.applicationLocale.dayName(((model.index + root.applicationLocale.firstDayOfWeek) % root.days), Locale.ShortFormat)
-                            }
-                    }
-                }
-            }
+                    Controls2.Label {
+                        id: weekLabel
 
-            /**
-            * Grid that displays the days of a month (normally 6x7)
-            */
-            Grid {
-                columns: root.days
-                rows: root.weeks
+                        anchors.centerIn: parent
 
-                Repeater {
-                    model: root.daysModel
-                    delegate: DayDelegate {
-                        currentDate: root.currentDate
-                        delegateWidth: root.dayRectWidth
-                        selectedDate: root.selectedDate
-
-                        onDayClicked: root.selectedDate = new Date(model.yearNumber, model.monthNumber -1, model.dayNumber, root.selectedDate.getHours(), root.selectedDate.getMinutes(), 0)
+                        color: Kirigami.Theme.textColor
+                        text: root.applicationLocale.dayName(
+                                  ((model.index + root.applicationLocale.firstDayOfWeek)
+                                   % root.days), Locale.ShortFormat)
+                        font.pointSize: theme.defaultFont.pointSize + 2
+                        opacity: model.index % 7 === 0 | model.index % 7 === 6 ? 0.3 : 1
                     }
                 }
             }
         }
+
+        /**
+         * Grid that displays the days of a month (normally 6x7)
+         */
+        Grid {
+            id: grid
+
+            Layout.fillWidth: true
+            anchors.top: rwDate.bottom
+
+            columns: root.days
+            rows: root.weeks
+
+            add: Transition {
+                id: amin
+                NumberAnimation {
+                    properties: "scale"
+                    from: 0
+                    to: 1
+                    duration: 200
+                }
+            }
+
+            Repeater {
+                model: root.daysModel
+                delegate: DayDelegate {
+                    currentDate: root.currentDate
+                    delegateWidth: root.dayRectWidth
+                    delegateHeigh: (mainWindow.height - calendarHeader.height - rwDate.height) / 7
+                    selectedDate: root.selectedDate
+
+                    onMonthAndYearChanged: {
+                        calendarHeader.startScaleAmination()
+                    }
+
+                    onDayClicked: {
+                        root.selectedDate = new Date(model.yearNumber,
+                                                     model.monthNumber - 1,
+                                                     model.dayNumber,
+                                                     root.selectedDate.getHours(
+                                                         ),
+                                                     root.selectedDate.getMinutes(
+                                                         ), 0)
+                        rowMain.dayClickFindIndex(
+                                    new Date(model.yearNumber,
+                                             model.monthNumber - 1,
+                                             model.dayNumber))
+                    }
+                }
+            }
+        }
+    }
+
+    PopupEventEditor {
+        id: popupEventEditor
+
+        sourceView: cView
     }
 }

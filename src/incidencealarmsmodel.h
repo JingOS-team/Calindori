@@ -1,5 +1,6 @@
 /*
- * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -52,6 +53,10 @@ public:
      * @return A QVariantList of the items of the model. The members of the list are QHash<QString, QVariant> items that contain the following members: startOffsetValue, startOffsetType and actionType
      */
     Q_INVOKABLE QVariantList alarms() const;
+    Q_INVOKABLE void loadPersistentAlarms();
+    Q_INVOKABLE QString displayText(const int idx) const;
+    Q_INVOKABLE int getAlarmsCount() const;
+
 
 public Q_SLOTS:
 
@@ -63,7 +68,7 @@ public Q_SLOTS:
     /**
      * @brief Removes all alarms
      */
-    void removeAll();
+    Q_INVOKABLE void removeAll();
 
     /**
      * @brief Creates a model item and adds it to the model
@@ -74,16 +79,15 @@ Q_SIGNALS:
     void alarmPropertiesChanged();
 
 private:
-    void loadPersistentAlarms();
     QString alarmText(const int idx) const;
     QString alarmUid(const int idx) const;
     int alarmStartOffsetValue(const int idx) const;
     QString alarmStartOffsetType(const int idx) const;
     int alarmActionType(const int idx) const;
-    QString displayText(const int idx) const;
 
     QVariantList mAlarms;
     QVariantMap mAlarmProperties;
+
 };
 
 #endif

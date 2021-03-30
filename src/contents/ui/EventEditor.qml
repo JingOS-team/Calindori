@@ -7,21 +7,21 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
-import org.kde.kirigami 2.12 as Kirigami
+import org.kde.kirigami 2.3 as Kirigami
 import org.kde.calindori 0.1 as Calindori
 
-Kirigami.ScrollablePage {
+Kirigami.Page {
     id: root
 
     property string uid
     property alias summary: summary.text
-    property alias description: incidenceEditor.description
+    property alias description: description.text
     property alias startDt: startDateSelector.selectorDate
     property alias startHour: startTimeSelector.selectorHour
     property alias startMinute: startTimeSelector.selectorMinutes
     property alias startPm: startTimeSelector.selectorPm
     property alias allDay: allDaySelector.checked
-    property alias location: incidenceEditor.location
+    property alias location: location.text
     property var calendar
     property var incidenceData
     property alias endDt: endDateSelector.selectorDate
@@ -31,7 +31,6 @@ Kirigami.ScrollablePage {
     property alias repeatType: repeatSelector.repeatType
     property alias repeatEvery: repeatSelector.repeatEvery
     property alias repeatStopAfter: repeatSelector.stopAfter
-    property alias incidenceStatus: incidenceEditor.incidenceStatus
 
     signal editcompleted(var vevent)
 
@@ -45,24 +44,38 @@ Kirigami.ScrollablePage {
     title: uid == "" ? i18n("New event") : root.summary
 
     ColumnLayout {
+
         anchors.centerIn: parent
-        spacing: Kirigami.Units.smallSpacing
 
         Kirigami.FormLayout {
-            id: basicInfo
+            id: eventCard
 
-            Layout.fillWidth: true
+            enabled: !root.completed
+
+            Controls2.Label {
+                id: calendarName
+
+                Kirigami.FormData.label: i18n("Calendar:")
+                Layout.fillWidth: true
+                text: root.calendar.name
+            }
+
+            Kirigami.Separator {
+                Kirigami.FormData.isSection: true
+            }
 
             Controls2.TextField {
                 id: summary
 
-                text: incidenceData ? incidenceData.summary : ""
+                Layout.fillWidth: true
                 Kirigami.FormData.label: i18n("Summary:")
+                text: incidenceData ? incidenceData.summary : ""
+
             }
 
             RowLayout {
-                spacing: 0
                 Kirigami.FormData.label: i18n("Start:")
+                spacing: 0
 
                 DateSelectorButton {
                     id: startDateSelector
@@ -83,8 +96,8 @@ Kirigami.ScrollablePage {
             }
 
             RowLayout {
-                spacing: 0
                 Kirigami.FormData.label: i18n("End:")
+                spacing: 0
 
                 DateSelectorButton {
                     id: endDateSelector
@@ -128,67 +141,92 @@ Kirigami.ScrollablePage {
                 text: i18n("All day")
             }
 
+            Kirigami.Separator {
+                Kirigami.FormData.isSection: true
+            }
+
+            Controls2.TextField {
+                id: location
+
+                Layout.fillWidth: true
+                Kirigami.FormData.label: i18n("Location:")
+                text: incidenceData ? incidenceData.location : ""
+            }
+
             Controls2.ToolButton {
                 id: repeatSelector
 
                 property int repeatType: incidenceData != null && incidenceData.isRepeating ? incidenceData.repeatType : _repeatModel.noRepeat
                 property int repeatEvery: incidenceData != null && incidenceData.isRepeating ? incidenceData.repeatEvery : 1
-                property string repeatDescription: _repeatModel && _repeatModel.periodDecription(repeatType)
+                property string repeatDescription: _repeatModel.periodDecription(repeatType)
                 property int stopAfter: incidenceData != null && incidenceData.isRepeating ? incidenceData.repeatStopAfter: -1
 
-                text: _repeatModel && _repeatModel.repeatDescription(repeatType, repeatEvery, stopAfter)
+                text: _repeatModel.repeatDescription(repeatType, repeatEvery, stopAfter)
                 Kirigami.FormData.label: i18n("Repeat:")
 
                 onClicked: recurPickerSheet.init(repeatType, repeatEvery, stopAfter )
             }
         }
 
-        Item {
-            height: Kirigami.Units.largeSpacing
+        Kirigami.Separator {
+            Layout.fillWidth: true
         }
 
-        Controls2.TabBar {
-            id: bar
+        Controls2.TextArea {
+            id: description
 
-            Layout.fillWidth: Kirigami.Settings.isMobile
-            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
+            Layout.minimumWidth: Kirigami.Units.gridUnit * 4
+            Layout.minimumHeight: Kirigami.Units.gridUnit * 4
+            Layout.maximumWidth: eventCard.width
+            wrapMode: Text.WrapAnywhere
+            text: incidenceData ? incidenceData.description : ""
+            placeholderText: i18n("Description")
+        }
 
-            Controls2.TabButton {
-                text: i18n("Details")
-            }
+        RowLayout {
+            Controls2.Label {
+                id: remindersLabel
 
-            Controls2.TabButton {
+                Layout.fillWidth: true
                 text: i18n("Reminders")
             }
 
-            Controls2.TabButton {
-                text: i18n("Attendees")
+            Controls2.ToolButton {
+                text: i18n("Add")
+
+                onClicked: reminderEditor.open()
             }
         }
 
-        StackLayout {
-            currentIndex: bar.currentIndex
-
-            IncidenceEditor {
-                id: incidenceEditor
-
-                calendar: root.calendar
-                incidenceData: root.incidenceData
-                incidenceType: 0
-            }
-
-            Reminders {
-                enabled: (root.startDt !== undefined) && !isNaN(root.startDt)
-                alarmsModel: incidenceAlarmsModel
-            }
-
-            Attendees {
-                attendeesModel: incidenceAttendeesModel
-                incidenceData: root.incidenceData
-                calendar: root.calendar
-            }
-
+        Kirigami.Separator {
+            Layout.fillWidth: true
         }
+
+        Repeater {
+            id: alarmsList
+
+            model: incidenceAlarmsModel
+
+            delegate: Kirigami.SwipeListItem {
+                contentItem: Controls2.Label {
+                    text: model.display
+                    wrapMode: Text.WordWrap
+                }
+
+                Layout.fillWidth: true
+
+                actions: [
+                     Kirigami.Action {
+                        id: deleteAlarm
+
+                        iconName: "delete"
+                        onTriggered: incidenceAlarmsModel.removeAlarm(model.index)
+                    }
+                ]
+            }
+        }
+
     }
 
     actions {
@@ -209,42 +247,26 @@ Kirigami.ScrollablePage {
             enabled: summary.text
 
             onTriggered: {
-                var vevent = { "uid" : root.uid, "startDate": root.startDt, "summary": root.summary, "description": root.description, "startHour": root.startHour + (root.startPm ? 12 : 0), "startMinute": root.startMinute, "allDay": root.allDay, "location": root.location, "endDate": root.endDt, "endHour": root.endHour + (root.endPm ? 12 : 0), "endMinute": root.endMinute, "alarms": incidenceAlarmsModel.alarms(), "periodType": root.repeatType, "repeatEvery": root.repeatEvery, "stopAfter": root.repeatStopAfter, "status": root.incidenceStatus};
+                var vevent = { "uid" : root.uid, "startDate": root.startDt, "summary": root.summary, "description": root.description, "startHour": root.startHour + (root.startPm ? 12 : 0), "startMinute": root.startMinute, "allDay": root.allDay, "location": root.location, "endDate": root.endDt, "endHour": root.endHour + (root.endPm ? 12 : 0), "endMinute": root.endMinute, "alarms": incidenceAlarmsModel.alarms(), "periodType": root.repeatType, "repeatEvery": root.repeatEvery, "stopAfter": root.repeatStopAfter};
 
-                var validation = Calindori.CalendarController.validateEvent(vevent);
+                var validation = _eventController.validate(vevent);
 
                 if(validation.success) {
-                    validationFooter.visible = false;
-                    Calindori.CalendarController.upsertEvent(root.calendar, vevent, incidenceAttendeesModel.attendees());
+                    _eventController.addEdit(root.calendar, vevent);
                     editcompleted(vevent);
                 }
                 else {
-                    validationFooter.text = validation.reason;
-                    validationFooter.visible = true;
+                    showPassiveNotification(validation.reason);
                 }
             }
         }
     }
 
-    footer: Kirigami.InlineMessage {
-        id: validationFooter
-
-        showCloseButton: true
-        type: Kirigami.MessageType.Warning
-        visible: false
-    }
-
     Calindori.IncidenceAlarmsModel {
+
         id: incidenceAlarmsModel
 
         alarmProperties: { "calendar" : root.calendar, "uid": root.uid }
-    }
-
-    Calindori.AttendeesModel {
-        id: incidenceAttendeesModel
-
-        calendar: root.calendar
-        uid: root.uid
     }
 
     RecurrencePickerSheet {
@@ -255,5 +277,11 @@ Kirigami.ScrollablePage {
             repeatSelector.repeatEvery = recurPickerSheet.selectedRepeatEvery
             repeatSelector.stopAfter = recurPickerSheet.selectedStopAfter;
         }
+    }
+
+    ReminderEditor {
+        id: reminderEditor
+
+        onOffsetSelected: incidenceAlarmsModel.addAlarm(offset)
     }
 }

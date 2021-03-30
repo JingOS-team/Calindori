@@ -17,21 +17,9 @@ Kirigami.GlobalDrawer {
     property var calendar
     property bool wideScreen: false
 
+    title: _calindoriConfig && _calindoriConfig.activeCalendar
     handleVisible: !root.wideScreen
     modal: !root.wideScreen
-
-    header: Kirigami.AbstractApplicationHeader {
-        topPadding: Kirigami.Units.smallSpacing
-        bottomPadding: Kirigami.Units.largeSpacing
-        leftPadding: Kirigami.Units.largeSpacing
-        rightPadding: Kirigami.Units.smallSpacing
-        implicitHeight: Kirigami.Units.gridUnit * 2
-        Kirigami.Heading {
-            level: 1
-            text: _calindoriConfig && _calindoriConfig.activeCalendar
-            Layout.fillWidth: true
-        }
-    }
 
     actions: [
         Kirigami.Action {
@@ -45,8 +33,7 @@ Kirigami.GlobalDrawer {
                 text: i18n("Month")
 
                 onTriggered: {
-                    popExtraLayers();
-                    popAll();
+                    pageStack.clear();
                     pageStack.push(monthView);
                 }
             }
@@ -55,8 +42,7 @@ Kirigami.GlobalDrawer {
                 text: i18n("Day")
 
                 onTriggered: {
-                    popExtraLayers();
-                    popAll();
+                    pageStack.clear();
                     pageStack.push(dayView);
                 }
             }
@@ -65,9 +51,8 @@ Kirigami.GlobalDrawer {
                 text: i18n("Week")
 
                 onTriggered: {
-                    popExtraLayers();
-                    popAll();
-                    pageStack.push(weekView, { startDate: Calindori.CalendarController.localSystemDateTime() } );
+                    pageStack.clear();
+                    pageStack.push(weekView, { startDate: _eventController.localSystemDateTime() } );
                 }
             }
 
@@ -75,8 +60,7 @@ Kirigami.GlobalDrawer {
                 text: i18n("All Tasks")
 
                 onTriggered: {
-                    popExtraLayers();
-                    popAll();
+                    pageStack.clear();
                     pageStack.push(incidenceView, { incidenceType: 1, filterMode: 9 });
                 }
             }
@@ -85,8 +69,7 @@ Kirigami.GlobalDrawer {
                 text: i18n("All Events")
 
                 onTriggered: {
-                    popExtraLayers();
-                    popAll();
+                    pageStack.clear();
                     pageStack.push(incidenceView, { incidenceType: 0, filterMode: 8 });
                 }
             }
@@ -95,7 +78,7 @@ Kirigami.GlobalDrawer {
         Kirigami.Action {
             id: calendarManagement
 
-            text: i18n("Calendars")
+            text: i18n("Calendar Management")
             iconName: "view-calendar"
 
             // Internal Calendars
@@ -126,8 +109,8 @@ Kirigami.GlobalDrawer {
             iconName: "settings-configure"
 
             onTriggered: {
-                popExtraLayers();
-                pageStack.layers.push(settingsPage);
+                pageStack.clear();
+                pageStack.push(settingsPage)
             }
         },
 
@@ -138,8 +121,8 @@ Kirigami.GlobalDrawer {
             text: i18n("About")
 
             onTriggered: {
-                popExtraLayers();
-                pageStack.layers.push(aboutInfoPage);
+                pageStack.clear();
+                pageStack.push(aboutInfoPage)
             }
         }
     ]
@@ -148,7 +131,6 @@ Kirigami.GlobalDrawer {
         model: _calindoriConfig && _calindoriConfig.internalCalendars
 
         delegate: CalendarAction {
-            loadedCalendar: root.calendar
             text: modelData
         }
 
@@ -166,7 +148,6 @@ Kirigami.GlobalDrawer {
         model: _calindoriConfig && _calindoriConfig.externalCalendars
 
         delegate: CalendarAction {
-            loadedCalendar: root.calendar
             text: modelData
         }
 
@@ -186,6 +167,7 @@ Kirigami.GlobalDrawer {
             State {
                 when: root.wideScreen
                 PropertyChanges { target: root; drawerOpen: true }
+                PropertyChanges { target: root; width: Kirigami.Units.gridUnit * 14 }
             },
             State {
                 when: !root.wideScreen
@@ -201,17 +183,21 @@ Kirigami.GlobalDrawer {
         iconName: "resource-calendar-insert"
 
         onTriggered: {
-            pageStack.layers.push(calendarEditor, {mode: CalendarEditor.Mode.Create});
+            pageStack.clear();
+            pageStack.push(calendarEditor, {mode: CalendarEditor.Mode.Create});
         }
     }
 
     Kirigami.Action {
         id: calendarImportAction
 
-        text: i18n("Import data")
+        text: i18n("Import")
         iconName: "document-import"
 
-        onTriggered: fileChooser.open()
+        onTriggered: {
+            pageStack.clear();
+            pageStack.push(calendarEditor, {mode: CalendarEditor.Mode.Import})
+        }
     }
 
     Kirigami.Action {
@@ -221,8 +207,8 @@ Kirigami.GlobalDrawer {
         iconName: "resource-calendar-child-insert"
 
         onTriggered: {
-
-            pageStack.layers.push(calendarEditor, {mode: CalendarEditor.Mode.AddExisting});
+            pageStack.clear();
+            pageStack.push(calendarEditor, {mode: CalendarEditor.Mode.AddExisting});
         }
     }
 
@@ -230,13 +216,11 @@ Kirigami.GlobalDrawer {
         id: calendarEditor
 
         CalendarEditor {
-
-            loadedCalendar: root.calendar
-
-            onCalendarEditorSaved: pageStack.layers.pop()
-
-            onCalendarEditorCancelled: pageStack.layers.pop()
-
+            onCalendarAdded: {
+                pageStack.clear()
+                pageStack.push(monthView);
+            }
+            onCalendarAddCanceled: pageStack.pop(calendarEditor)
         }
     }
 
@@ -277,11 +261,5 @@ Kirigami.GlobalDrawer {
         {
             aboutData: _aboutData
         }
-    }
-
-    FileChooser {
-        id: fileChooser
-
-        onAccepted: Calindori.DataHandler.importFromUrl(fileUrl)
     }
 }

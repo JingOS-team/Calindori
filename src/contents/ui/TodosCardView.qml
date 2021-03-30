@@ -27,9 +27,17 @@ Kirigami.ScrollablePage {
     leftPadding: 0
     rightPadding: 0
 
+    Component {
+        id: todoEditor
+        TodoEditor {
+            calendar: localCalendar
+
+            onEditcompleted: pageStack.pop(todoEditor)
+        }
+    }
+
     Kirigami.PlaceholderMessage {
         anchors.centerIn: parent
-        icon.name: "view-calendar-tasks"
         width: parent.width - (Kirigami.Units.largeSpacing * 4)
         visible: cardsListview.count == 0
         text: !isNaN(todoDt) ? i18n("No tasks scheduled for %1", todoDt.toLocaleDateString(_appLocale, Locale.ShortFormat)) : i18n("No tasks scheduled")
@@ -51,9 +59,8 @@ Kirigami.ScrollablePage {
                     icon.name: "delete"
 
                     onTriggered: {
-                        deleteMsg.taskUid = model.uid;
-                        deleteMsg.taskSummary = model.summary;
-                        deleteMsg.visible = true;
+                        var vtodo = { "uid" : model.uid };
+                        _todoController.remove(root.calendar, vtodo);
                     }
                 },
 
@@ -67,33 +74,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    footer: Kirigami.InlineMessage {
-        id: deleteMsg
-
-        property string taskUid
-        property string taskSummary
-
-        text: i18n("Task %1 will be deleted", taskSummary)
-        visible: false
-
-        actions: [
-            Kirigami.Action {
-                text: i18n("Delete")
-
-                onTriggered: {
-                    Calindori.CalendarController.removeTodo(root.calendar, {"uid": deleteMsg.taskUid});
-                    deleteMsg.visible = false;
-                }
-            },
-
-            Kirigami.Action {
-                text: i18n("Cancel")
-
-                onTriggered: deleteMsg.visible = false
-            }
-        ]
-    }
-
     Calindori.IncidenceModel {
         id: todosModel
 
@@ -102,14 +82,4 @@ Kirigami.ScrollablePage {
         calendar: root.calendar
         filterMode: 6
     }
-
-    Component {
-        id: todoEditor
-        TodoEditorPage {
-            calendar: localCalendar
-
-            onEditcompleted: pageStack.pop(root)
-        }
-    }
-
 }

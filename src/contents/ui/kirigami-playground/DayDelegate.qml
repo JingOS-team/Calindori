@@ -1,5 +1,6 @@
 /*
- * SPDX-FileCopyrightText: 2018 Dimitris Kardarakos <dimkard@posteo.net>
+ * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -8,6 +9,7 @@ import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
 import org.kde.kirigami 2.0 as Kirigami
+
 
 /**
  * Month Day Delegate
@@ -20,56 +22,113 @@ import org.kde.kirigami 2.0 as Kirigami
  * 2. monthNumber
  * 3. yearNumber
  */
-Rectangle {
+Item {
     id: dayDelegate
 
+    property var lableText
+    property var pos1
     property date currentDate
     property int delegateWidth
+    property int delegateHeigh
     property date selectedDate
-    property bool highlight: (model.yearNumber == selectedDate.getFullYear())  &&  (model.monthNumber == selectedDate.getMonth() + 1) &&  (model.dayNumber == root.selectedDate.getDate())
+    property bool highlight: (model.yearNumber == selectedDate.getFullYear())
+                             && (model.monthNumber == selectedDate.getMonth(
+                                     ) + 1)
+                             && (model.dayNumber == root.selectedDate.getDate())
+    property int currentYearNumber: model.yearNumber
 
     signal dayClicked
+    signal monthAndYearChanged
 
     width: childrenRect.width
     height: childrenRect.height
-    opacity:(isToday || highlight )  ? 0.4 : 1
-    color: isToday ? Kirigami.Theme.textColor : ( highlight ? Kirigami.Theme.selectionBackgroundColor : Kirigami.Theme.backgroundColor )
-    border.color: Kirigami.Theme.disabledTextColor
 
     Item {
         width: dayDelegate.delegateWidth
-        height: width
+        height: delegateHeigh
 
-        /**
-         * Display a tiny indicator in case that
-         * todos or events exist for the day of the model
-         */
-        Rectangle {
-            anchors {
-                bottom: parent.bottom
-                bottomMargin: parent.width/15
-                right: parent.right
-                rightMargin: parent.width/15
+        Item {
+            id: dayButton
 
+            anchors.fill: parent
+            enabled: isCurrentMonth
+
+            Rectangle {
+                id: bgRect
+
+                anchors.centerIn: parent
+                anchors.top: parent.top
+
+                width: dayDelegate.width / 2
+                height: width
+
+                visible: isCurrentMonth && highlight ? true : false
+                color: "#E95B4E"
+                radius: width / 3.36
             }
 
-            width: parent.width/10
-            height: width
-            radius: 50
-            color: Kirigami.Theme.selectionFocusColor
-            visible: incidenceCount > 0
-        }
+            Text {
+                id: dayNum
 
-        Controls2.Label {
-            anchors.centerIn: parent
-            enabled: isCurrentMonth
-            text: model.dayNumber
+                anchors.centerIn: parent
+
+                visible: isCurrentMonth
+                opacity: highlight ? 1 : (model.index % 7 === 0 | model.index
+                                          % 7 === 6 | !isCurrentMonth) ? 0.3 : 1
+                text: model.dayNumber
+                color: highlight ? "white" : (isToday ? "red" : "black")
+                font.pointSize: highlight ? theme.defaultFont.pointSize
+                                            + 14 : theme.defaultFont.pointSize + 9
+            }
+
+            Rectangle {
+                anchors {
+                    top: highlight ? bgRect.bottom : dayNum.bottom
+                    topMargin: 10
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                width: dayDelegate.width / 13.6
+                height: width
+
+                radius: width / 2
+                color: "#E95B4E"
+                visible: isCurrentMonth && model.incidenceCount > 0
+            }
         }
 
         MouseArea {
             anchors.fill: parent
-            enabled: isCurrentMonth
-            onClicked: dayDelegate.dayClicked()
+
+            preventStealing: true
+            hoverEnabled: true
+
+            onPressed: {
+                pos1 = mouseY
+            }
+
+            onWheel: {
+                if (wheel.angleDelta.y >= 100) {
+                    dayDelegate.monthAndYearChanged()
+                    calendarMonthView.previousMonth()
+                } else if (wheel.angleDelta.y <= -100) {
+                    dayDelegate.monthAndYearChanged()
+                    calendarMonthView.nextMonth()
+                }
+            }
+
+            onReleased: {
+                if (mouseY - pos1 > 100) {
+                    dayDelegate.monthAndYearChanged()
+                    calendarMonthView.previousMonth()
+                } else if (mouseY - pos1 < -100) {
+                    dayDelegate.monthAndYearChanged()
+                    calendarMonthView.nextMonth()
+                } else {
+                    if (isCurrentMonth)
+                        dayDelegate.dayClicked()
+                }
+            }
         }
     }
 }

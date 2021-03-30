@@ -10,13 +10,15 @@ import org.kde.kirigami 2.0 as Kirigami
 import QtQuick.Layouts 1.3
 
 
-Controls2.AbstractButton {
+Controls2.ToolButton {
     id: hoursButton
 
     property int selectedValue
     property string type
 
+    checkable: true
     checked: index == selectedValue
+    autoExclusive: true
     text: index == selectedValue ? ( (type == "hours" && index == 0) ? 12 : index )
                                  : ( (type == "hours") ? ( index == 0 ? 12 : ( (index % 3 == 0) ? index : ".") ) : (index % 15 == 0) ? index : ".")
     contentItem: Controls2.Label {
@@ -27,9 +29,9 @@ Controls2.AbstractButton {
     }
 
     background: Rectangle {
-        implicitHeight: Kirigami.Units.gridUnit * 1.2
+        implicitHeight: Kirigami.Units.gridUnit
         implicitWidth: height
-        radius: width * 0.5
+        radius: width*0.5
         color: parent.checked ? Kirigami.Theme.buttonBackgroundColor : "transparent"
     }
 }

@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -8,7 +9,8 @@ import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
 import org.kde.kirigami 2.0 as Kirigami
-import org.kde.calindori 0.1 as Calindori
+import org.kde.calindori 0.1
+
 
 /**
  * Calendar component that displays:
@@ -17,18 +19,19 @@ import org.kde.calindori 0.1 as Calindori
  *  - a set of actions to navigate between months
  * It offers vertical swiping
  */
-Controls2.SwipeView {
+Rectangle {
     id: root
 
+    property var currentdDate: _eventController.localSystemDateTime()
     property alias selectedDate: monthView.selectedDate
     property alias displayedMonthName: monthView.displayedMonthName
     property alias displayedYear: monthView.displayedYear
     property alias showHeader: monthView.showHeader
     property alias showMonthName: monthView.showMonthName
     property alias showYear: monthView.showYear
-    property alias dayRectangleWidth: monthView.dayRectWidth
-    property int previousIndex
     property var cal
+
+
     /**
      * @brief When set, we take over the handling of the container items indexes programmatically
      *
@@ -38,73 +41,42 @@ Controls2.SwipeView {
     signal nextMonth
     signal previousMonth
     signal goToday
-    /**
-     * @brief It should be emitted when the SwipeView currentIndex is set to the first or the last one
-     *
-     * @param lastDate p_lastDate:...
-     */
-    signal viewEnd(var lastDate)
+
+    clip: true
 
     onNextMonth: {
-        mm.goNextMonth();
-        root.selectedDate = new Date(mm.year, mm.month-1, 1, root.selectedDate.getHours(), root.selectedDate.getMinutes());
+        mm.goNextMonth()
+        var date = new Date(mm.year, mm.month - 1, 1,
+                            root.selectedDate.getHours(),
+                            root.selectedDate.getMinutes())
+        calendarScheduleView.positionListViewFromMonth(date)
     }
 
     onPreviousMonth: {
-        mm.goPreviousMonth();
-        root.selectedDate = new Date(mm.year, mm.month-1, 1, root.selectedDate.getHours(), root.selectedDate.getMinutes());
+        mm.goPreviousMonth()
+        var date = new Date(mm.year, mm.month - 1, 1,
+                            root.selectedDate.getHours(),
+                            root.selectedDate.getMinutes())
+        calendarScheduleView.positionListViewFromMonth(date)
     }
 
     onGoToday: {
-        mm.goCurrentMonth();
-        root.selectedDate = Calindori.CalendarController.localSystemDateTime();
+        mm.goCurrentMonth()
+        root.selectedDate = _eventController.localSystemDateTime()
+        calendarScheduleView.positionListViewFromMonth(root.selectedDate)
+        calendarScheduleView.positionListViewFromDate(root.selectedDate)
     }
 
-    onCurrentItemChanged: manageIndex()
-
-    function manageIndex ()
-    {
-        if(!manualIndexing)
-        {
-            return;
-        }
-
-        var returnDate = root.selectedDate;
-
-        if (currentIndex > previousIndex)
-        {
-            returnDate = (returnDate.getMonth() == 11) ? new Date(returnDate.getFullYear() + 1, 0, 1) : new Date(returnDate.getFullYear(), returnDate.getMonth() + 1, 1);
-        }
-        else
-        {
-            returnDate = (returnDate.getMonth() == 0) ? new Date(returnDate.getFullYear() - 1, 11, 1) : new Date(returnDate.getFullYear(), returnDate.getMonth() - 1, 1);
-        }
-
-        previousIndex = currentIndex;
-
-        if(currentIndex != 1)
-        {
-            viewEnd(returnDate) //Inform parents about the date to set as selected when re-pushing this page
-        }
+    function popShowMessage(model, incidenceAlarmsModel) {
+        monthView.popShowMessage(model, incidenceAlarmsModel)
     }
 
-    Connections {
-        target: cal
-
-        function onTodosChanged () { monthView.reloadSelectedDate(); }
-        function onEventsChanged () { monthView.reloadSelectedDate(); }
+    function notifyCalendarChanged(d) {
+        mm.update()
+        calendarScheduleView.positionListViewFromDate(d)
     }
 
-    Component.onCompleted: {
-        currentIndex = 1;
-        previousIndex = currentIndex;
-        manualIndexing = true;
-        orientation = Qt.Vertical //Change orientation after the object has been instantiated. Otherwise, we get a non-intuitive animation when swiping upwards
-    }
-
-    orientation: Qt.Horizontal
-
-    Calindori.DaysOfMonthIncidenceModel {
+    DaysOfMonthIncidenceModel {
         id: mm
 
         year: monthView.selectedDate.getFullYear()
@@ -112,30 +84,16 @@ Controls2.SwipeView {
         calendar: cal
     }
 
-    Item {}
+    MonthView {
+        id: monthView
 
-    Item {
-        MonthView {
-            id: monthView
+        anchors.left: parent.left
 
-            anchors.centerIn: parent
-
-            applicationLocale: _appLocale
-            displayedYear: mm.year
-            displayedMonthName: _appLocale.standaloneMonthName(mm.month-1)
-            selectedDayTodosCount: cal.todosCount(selectedDate)
-            selectedDayEventsCount: cal.eventsCount(selectedDate)
-            daysModel: mm
-            selectedDate: Calindori.CalendarController.localSystemDateTime()
-            currentDate: Calindori.CalendarController.localSystemDateTime()
-            loadAsync: true
-
-            reloadSelectedDate: function() {
-                selectedDayTodosCount = cal.todosCount(root.selectedDate)
-                selectedDayEventsCount = cal.eventsCount(root.selectedDate)
-            }
-        }
+        daysModel: mm
+        applicationLocale: _appLocale
+        displayedYear: mm.year
+        displayedMonthName: _appLocale.standaloneMonthName(mm.month - 1)
+        selectedDate: _eventController.localSystemDateTime()
+        currentDate: _eventController.localSystemDateTime()
     }
-
-    Item {}
 }

@@ -4,38 +4,32 @@
 
 cmake_minimum_required(VERSION 3.0)
 
-project(calindori VERSION "1.3.90")
+project(calindori VERSION "1.2.90")
 
 set(KF5_MIN_VERSION "5.62.0")
 set(QT_MIN_VERSION "5.14.0")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+################# Disallow in-source build #################
+
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+   message(FATAL_ERROR "Calindori requires an out of source build. Please create a separate build directory.")
+endif()
+
+include(FeatureSummary)
+
+################# set KDE specific information #################
 
 find_package(ECM ${KF5_MIN_VERSION} REQUIRED NO_MODULE)
 
-set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+# where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
-include(CTest)
-include(FeatureSummary)
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMPoQmTools)
 
-find_package(Qt5 ${QT_MIN_VERSION} REQUIRED NO_MODULE COMPONENTS
-    Core
-    Gui
-    Qml
-    Quick
-    QuickControls2
-    DBus
-    Svg
-    Network
-)
-if (BUILD_TESTING)
-    find_package(Qt5 ${QT_MIN_VERSION} REQUIRED NO_MODULE COMPONENTS Test)
-endif()
+find_package(Qt5 ${QT_MIN_VERSION} REQUIRED NO_MODULE COMPONENTS DBus Core Quick Gui Svg Test Qml QuickControls2)
 
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     Config
@@ -43,11 +37,22 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     I18n
     CoreAddons
     CalendarCore
-    DBusAddons
-    Notifications
-    Service
-    People
 )
+
+find_package(KF5DBusAddons CONFIG REQUIRED)
+find_package(KF5Notifications CONFIG REQUIRED)
+find_package(KF5Service CONFIG REQUIRED)
+
+################# Enable C++11 features for clang and gcc #################
+
+if(UNIX)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
+endif()
+
+################# now find all used packages #################
+
+find_package(PkgConfig)
+#########################################################################
 
 add_subdirectory(src)
 add_subdirectory(icons)

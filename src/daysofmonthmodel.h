@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2019 Nicolas Fella <nicolas.fella@gmx.de>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -27,6 +28,7 @@ class DaysOfMonthModel : public QAbstractListModel
     Q_PROPERTY(int month READ month WRITE setMonth NOTIFY monthChanged)
     Q_PROPERTY(int daysPerWeek READ daysPerWeek WRITE setDaysPerWeek NOTIFY daysPerWeekChanged)
     Q_PROPERTY(int weeks READ weeks WRITE setWeeks NOTIFY weeksChanged)
+    
 public:
     enum Roles {
         CurrentMonthRole = Qt::UserRole + 1,
@@ -41,10 +43,8 @@ public:
     int rowCount(const QModelIndex &parent) const override;
 
     int year() const;
-    void setYear(int year);
 
     int month() const;
-    void setMonth(int month);
 
     int daysPerWeek() const;
     void setDaysPerWeek(int daysPerWeek);
@@ -52,10 +52,13 @@ public:
     int weeks() const;
     void setWeeks(int weeks);
 
+    Q_INVOKABLE void setYear(int year);
+    Q_INVOKABLE void setMonth(int month);
     Q_INVOKABLE void goNextMonth();
     Q_INVOKABLE void goPreviousMonth();
     Q_INVOKABLE void goCurrentMonth();
     Q_INVOKABLE void update();
+    Q_INVOKABLE bool is24HourFormat();
 
 Q_SIGNALS:
     void yearChanged();
@@ -64,13 +67,14 @@ Q_SIGNALS:
     void weeksChanged();
 
 private:
-
     QVector<DayData> m_dayList;
     int m_firstDayOfWeek = QLocale::system().firstDayOfWeek();
     int m_year;
     int m_month;
     int m_daysPerWeek = 7;
     int m_weeks = 6;
+
+    QDateTime lastChangedTime =  QDateTime::currentDateTime();;
 };
 
 #endif // DAYSOFMONTHMODEL_H

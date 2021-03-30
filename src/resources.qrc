@@ -1,14 +1,10 @@
-<!--
- SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
- SPDX-License-Identifier: BSD-2-Clause
--->
 <RCC>
     <qresource prefix="/">
         <file alias="MonthView.qml">contents/ui/kirigami-playground/MonthView.qml</file>
         <file alias="DayDelegate.qml">contents/ui/kirigami-playground/DayDelegate.qml</file>
         <file alias="Main.qml">contents/ui/Main.qml</file>
         <file alias="TodosCardView.qml">contents/ui/TodosCardView.qml</file>
-        <file alias="TodoEditorPage.qml">contents/ui/TodoEditorPage.qml</file>
+        <file alias="TodoEditor.qml">contents/ui/TodoEditor.qml</file>
         <file alias="CalendarMonthView.qml">contents/ui/CalendarMonthView.qml</file>
         <file alias="CalendarHeader.qml">contents/ui/kirigami-playground/CalendarHeader.qml</file>
         <file alias="TimePicker.qml">contents/ui/kirigami-playground/TimePicker.qml</file>
@@ -17,11 +13,10 @@
         <file alias="CalendarAction.qml">contents/ui/CalendarAction.qml</file>
         <file alias="ConfirmationSheet.qml">contents/ui/ConfirmationSheet.qml</file>
         <file alias="EventsCardView.qml">contents/ui/EventsCardView.qml</file>
-        <file alias="EventEditorPage.qml">contents/ui/EventEditorPage.qml</file>
+        <file alias="EventEditor.qml">contents/ui/EventEditor.qml</file>
         <file alias="TimePickerSheet.qml">contents/ui/TimePickerSheet.qml</file>
         <file alias="DatePickerSheet.qml">contents/ui/DatePickerSheet.qml</file>
         <file alias="FileChooser.qml">contents/ui/FileChooser.qml</file>
-        <file alias="ReminderEditor.qml">contents/ui/ReminderEditor.qml</file>
         <file alias="PickerMonthView.qml">contents/ui/PickerMonthView.qml</file>
         <file alias="RecurrencePickerSheet.qml">contents/ui/RecurrencePickerSheet.qml</file>
         <file alias="DateSelectorButton.qml">contents/ui/DateSelectorButton.qml</file>
@@ -38,11 +33,38 @@
         <file alias="CalindoriGlobalDrawer.qml">contents/ui/CalindoriGlobalDrawer.qml</file>
         <file alias="SettingsPage.qml">contents/ui/SettingsPage.qml</file>
         <file alias="IncidenceItemDelegate.qml">contents/ui/IncidenceItemDelegate.qml</file>
-        <file alias="IncidenceEditor.qml">contents/ui/IncidenceEditor.qml</file>
-        <file alias="IncidenceCardData.qml">contents/ui/IncidenceCardData.qml</file>
-        <file alias="AttendeePicker.qml">contents/ui/AttendeePicker.qml</file>
-        <file alias="Attendees.qml">contents/ui/Attendees.qml</file>
-        <file alias="Reminders.qml">contents/ui/Reminders.qml</file>
-        <file alias="AttendeeRoleEditor.qml">contents/ui/AttendeeRoleEditor.qml</file>
+        <file alias="CustomCalendarHeader.qml">contents/ui/kirigami-playground/CustomCalendarHeader.qml</file>
+        <file alias="CalendarScheduleView.qml">contents/ui/CalendarScheduleView.qml</file>
+        <file alias="CustomMonthView.qml">contents/ui/kirigami-playground/CustomMonthView.qml</file>
+        <file alias="WheelView.qml">contents/ui/kirigami-playground/WheelView.qml</file>
+        <file alias="DateSelectWheelView.qml">contents/ui/kirigami-playground/DateSelectWheelView.qml</file>
+        <file alias="TimeSelectWheelView.qml">contents/ui/kirigami-playground/TimeSelectWheelView.qml</file>
+        <file alias="CustomDayDelegate.qml">contents/ui/kirigami-playground/CustomDayDelegate.qml</file>
+        <file alias="ReminderEditor.qml">contents/ui/ReminderEditor.qml</file>
+        <file alias="PopupEventEditor.qml">contents/ui/PopupEventEditor.qml</file>
+        <file alias="EditDialogView.qml">contents/ui/EditDialogView.qml</file>
+        <file alias="VagueBackground.qml">contents/ui/VagueBackground.qml</file>
+        <file alias="CursorBlinks.qml">contents/ui/CursorBlinks.qml</file>
+    </qresource>
+    <qresource prefix="/assets">
+        <file alias="desktop.png">assets/desktop.png</file>
+        <file alias="edit_delete.png">assets/edit_delete.png</file>
+        <file alias="add_reminder.png">assets/add_reminder.png</file>
+        <file alias="alert_back.png">assets/alert_back.png</file>
+        <file alias="arrow_left.png">assets/arrow_left.png</file>
+        <file alias="arrow_right.png">assets/arrow_right.png</file>
+        <file alias="calendar_normal.png">assets/calendar_normal.png</file>
+        <file alias="calendar_selected.png">assets/calendar_selected.png</file>
+        <file alias="edit_event_summary.png">assets/edit_event_summary.png</file>
+        <file alias="edit_event_time.png">assets/edit_event_time.png</file>
+        <file alias="event_alarm.png">assets/event_alarm.png</file>
+        <file alias="event_cancel.png">assets/event_cancel.png</file>
+        <file alias="event_confirm.png">assets/event_confirm.png</file>
+        <file alias="today_number.png">assets/today_number.png</file>
+        <file alias="triangle_down.png">assets/triangle_down.png</file>
+        <file alias="triangle_up.png">assets/triangle_up.png</file>
+        <file alias="alert_time_selected.png">assets/alert_time_selected.png</file>
+        <file alias="edit_delete_black.png">assets/edit_delete_black.png</file>
+        <file alias="none-event.png">assets/none-event.png</file>
     </qresource>
 </RCC>

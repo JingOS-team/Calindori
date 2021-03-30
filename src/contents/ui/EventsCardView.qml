@@ -24,12 +24,23 @@ Kirigami.ScrollablePage {
     actions.main: Kirigami.Action {
         icon.name: "resource-calendar-insert"
         text: i18n("New Event")
-        onTriggered: pageStack.push(eventEditor, {startDt: (eventStartDt && !isNaN(eventStartDt)) ? new Date(root.eventStartDt.getTime() - root.eventStartDt.getMinutes()*60000 + 3600000) : Calindori.CalendarController.localSystemDateTime()})
+        onTriggered: pageStack.push(eventEditor, {startDt: (eventStartDt && !isNaN(eventStartDt)) ? new Date(root.eventStartDt.getTime() - root.eventStartDt.getMinutes()*60000 + 3600000) : _eventController.localSystemDateTime()})
+    }
+
+    Component {
+        id: eventEditor
+
+        EventEditor {
+            calendar: localCalendar
+
+            onEditcompleted: {
+                pageStack.pop(eventEditor);
+            }
+        }
     }
 
     Kirigami.PlaceholderMessage {
         anchors.centerIn: parent
-        icon.name: "tag-events"
         width: parent.width - (Kirigami.Units.largeSpacing * 4)
         visible: cardsListview.count == 0
         text: !isNaN(eventStartDt) ? i18n("No events scheduled for %1", eventStartDt.toLocaleDateString(_appLocale, Locale.ShortFormat)) : i18n("No events scheduled")
@@ -51,9 +62,8 @@ Kirigami.ScrollablePage {
                     icon.name: "delete"
 
                     onTriggered: {
-                        deleteMsg.eventUid = model.uid;
-                        deleteMsg.eventSummary = model.summary;
-                        deleteMsg.visible = true;
+                        var vevent = { uid: model.uid } ;
+                        _eventController.remove(root.calendar, vevent);
                     }
                 },
 
@@ -67,34 +77,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    footer: Kirigami.InlineMessage {
-        id: deleteMsg
-
-        property string eventUid
-        property string eventSummary
-
-        text: i18n("Event %1 will be deleted", eventSummary)
-        visible: false
-
-        actions: [
-            Kirigami.Action {
-                text: i18n("Delete")
-
-                onTriggered: {
-                    Calindori.CalendarController.removeEvent(root.calendar, {"uid": deleteMsg.eventUid});
-                    deleteMsg.visible = false;
-                }
-            },
-
-            Kirigami.Action {
-                text: i18n("Cancel")
-
-                onTriggered: deleteMsg.visible = false
-            }
-        ]
-    }
-
-
     Calindori.IncidenceModel {
         id: eventsModel
 
@@ -102,15 +84,5 @@ Kirigami.ScrollablePage {
         filterDt: root.eventStartDt
         calendar: root.calendar
         filterMode: 5
-    }
-
-    Component {
-        id: eventEditor
-
-        EventEditorPage {
-            calendar: localCalendar
-
-            onEditcompleted: pageStack.pop(root)
-        }
     }
 }

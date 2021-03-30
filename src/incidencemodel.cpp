@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -103,6 +104,7 @@ QHash<int, QByteArray> IncidenceModel::roleNames() const
         { RepeatStopAfter, "repeatStopAfter" },
         { IsRepeating, "isRepeating" },
         { DisplayStartDate, "displayStartDate" },
+        { DisplayStartDateOfWeek, "displayStartDateOfWeek" },
         { DisplayDueDate, "displayDueDate" },
         { DisplayDueTime, "displayDueTime" },
         { DisplayStartEndTime, "displayStartEndTime" },
@@ -113,12 +115,7 @@ QHash<int, QByteArray> IncidenceModel::roleNames() const
         { Due, "due" },
         { ValidStartDt, "validStartDt" },
         { ValidEndDt, "validEndDt" },
-        { ValidDueDt, "validDueDt" },
-        { AttendeeEmails, "attendeeEmails" },
-        { DisplayAttendeeEmails, "displayAttendeeEmails" },
-        { IncidenceStatus, "status" },
-        { OrganizerName, "organizerName" },
-        { DisplaytAttendeeNames, "displayAttendeeNames" }
+        { ValidDueDt, "validDueDt" }
     };
 }
 
@@ -166,6 +163,8 @@ QVariant IncidenceModel::data(const QModelIndex &index, int role) const
         return m_incidences.at(row)->recurs();
     case DisplayStartDate:
         return displayStartDate(row);
+    case DisplayStartDateOfWeek:
+        return displayStartDateOfWeek(row);
     case DisplayDueDate:
         return displayDueDate(row);
     case DisplayStartEndTime:
@@ -195,21 +194,6 @@ QVariant IncidenceModel::data(const QModelIndex &index, int role) const
         return ((type == IncidenceBase::TypeEvent) && m_incidences.at(row).dynamicCast<Event>()->hasEndDate());
     case ValidDueDt:
         return ((type == IncidenceBase::TypeTodo) && m_incidences.at(row).dynamicCast<Todo>()->hasDueDate());
-    case AttendeeEmails:
-        return attendeeEmails(row);
-    case DisplayAttendeeEmails:
-        return attendeeEmails(row).join(QString {", "});
-    case IncidenceStatus:
-        return m_incidences.at(row)->status();
-    case OrganizerName: {
-        auto person = m_incidences.at(row)->organizer();
-        if (!(person.isEmpty()) && !(person.name().isEmpty())) {
-            return person.name();
-        }
-        return QString {};
-    }
-    case DisplaytAttendeeNames:
-        return attendeeNames(row).join(QString {", "});
     default:
         return QVariant();
     }
@@ -325,7 +309,6 @@ Incidence::List IncidenceModel::hourEvents() const
         if (isHourEvent(e)) {
             incidences.append(e);
         }
-
     }
 
     return incidences;
@@ -383,10 +366,10 @@ bool IncidenceModel::isHourEvent(const Event::Ptr event) const
 
 bool IncidenceModel::withinFilter(const KCalendarCore::Event::Ptr event, const QDate &filterDate) const
 {
-    auto filterStart = filterDate.startOfDay(QTimeZone::systemTimeZone()).addSecs(m_filter_hour * 3600);
-    auto filterEnd = filterDate.startOfDay(QTimeZone::systemTimeZone()).addSecs(m_filter_hour * 3600 + 3599);
+    auto filterStart = filterDate.startOfDay().addSecs(m_filter_hour * 3600).toTimeZone(QTimeZone::systemTimeZone());
+    auto filterEnd = filterDate.startOfDay().addSecs(m_filter_hour * 3600 + 3599).toTimeZone(QTimeZone::systemTimeZone());
 
-    auto eventStartWithinFilter = event->dtStart().toTimeZone(QTimeZone::systemTimeZone()) >= filterStart && event->dtStart().toTimeZone(QTimeZone::systemTimeZone()) <= filterEnd;
+    auto eventStartWithinFilter = event->dtStart().toTimeZone(QTimeZone::systemTimeZone()) >= filterStart && event->dtStart().toTimeZone(QTimeZone::systemTimeZone()) <= filterStart;
     auto eventEndWithinFilter = event->dtEnd().toTimeZone(QTimeZone::systemTimeZone()) > filterStart && event->dtEnd().toTimeZone(QTimeZone::systemTimeZone()) <= filterEnd;
     auto filterWithinEvent =  event->dtStart().toTimeZone(QTimeZone::systemTimeZone()) < filterStart && filterEnd < event->dtEnd().toTimeZone(QTimeZone::systemTimeZone());
 
@@ -423,34 +406,34 @@ Incidence::List IncidenceModel::dayIncidences() const
 
 Incidence::List IncidenceModel::dayEvents() const
 {
-    auto events = m_calendar->calendar()->rawEventsForDate(m_filter_dt, QTimeZone::systemTimeZone(), EventSortStartDate, SortDirectionAscending);
+    auto events = m_calendar->memorycalendar()->rawEventsForDate(m_filter_dt, QTimeZone::systemTimeZone(), EventSortStartDate, SortDirectionAscending);
     return toIncidences(Calendar::sortEvents(events, EventSortField::EventSortStartDate, SortDirection::SortDirectionAscending));
 }
 
 Incidence::List IncidenceModel::dayTodos() const
 {
-    auto todos =  m_calendar->calendar()->rawTodos(m_filter_dt, m_filter_dt);
+    auto todos =  m_calendar->memorycalendar()->rawTodos(m_filter_dt, m_filter_dt);
 
     return toIncidences(Calendar::sortTodos(todos, TodoSortField::TodoSortDueDate, SortDirection::SortDirectionAscending));
 }
 
 Incidence::List IncidenceModel::allIncidences() const
 {
-    auto incidences = m_calendar->calendar()->rawIncidences();
+    auto incidences = m_calendar->memorycalendar()->rawIncidences();
 
     return incidences;
 }
 
 Incidence::List IncidenceModel::allTodos() const
 {
-    auto todos =  m_calendar->calendar()->todos(TodoSortDueDate, SortDirectionDescending);
+    auto todos =  m_calendar->memorycalendar()->todos(TodoSortDueDate, SortDirectionDescending);
 
     return toIncidences(todos);
 }
 
 Incidence::List IncidenceModel::allEvents() const
 {
-    auto events = m_calendar->calendar()->rawEvents(EventSortStartDate, SortDirectionDescending);
+    auto events = m_calendar->memorycalendar()->rawEvents(EventSortStartDate, SortDirectionAscending);
 
     return toIncidences(events);
 }
@@ -511,7 +494,24 @@ QString IncidenceModel::displayStartDate(const int idx) const
     auto incidence = m_incidences.at(idx);
 
     if (incidence->dtStart().isValid()) {
+
         return m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "MMM d");
+    }
+
+    return QString();
+}
+
+QString IncidenceModel::displayStartDateOfWeek(const int idx) const
+{
+    auto incidence = m_incidences.at(idx);
+
+    if (incidence->dtStart().isValid()) {
+
+        int currentYear =  QDateTime::currentDateTime().date().year();
+        int dtStartYear  = incidence->dtStart().date().year();
+
+        return currentYear == dtStartYear ? m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "dddd, MMM d")
+                                           : m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "yyyy, dddd, MMM d");
     }
 
     return QString();
@@ -589,28 +589,51 @@ void IncidenceModel::setFilterHideCompleted(const bool hideCompleted)
 void IncidenceModel::setCalendarFilter()
 {
     if (m_calendar != nullptr) {
-        m_calendar->calendar()->setFilter(m_cal_filter);
+        m_calendar->memorycalendar()->setFilter(m_cal_filter);
     }
 
     Q_EMIT calendarFilterChanged();
 }
 
-QStringList IncidenceModel::attendeeEmails(const int idx) const
+int IncidenceModel::getIndexFromIncidence(QDateTime date)
 {
-    auto attendees = m_incidences.at(idx)->attendees();
-    QStringList emails {};
-    for (const auto &a : attendees) {
-        emails.append(a.email());
+    int monthName = date.date().month();
+    int yearName = date.date().year();
+    int dateName = date.date().day();
+    int index =  -1;
+
+    for(int i = 0;i < m_incidences.count();i++){
+        auto incidence = m_incidences.at(i);
+
+        if (incidence->dtStart().isValid()) {
+            QDate currentDate = incidence->dtStart().date();
+
+            if(currentDate.year() == yearName && currentDate.month() == monthName && currentDate.day() == dateName ){
+               return i;
+            }
+        }
     }
-    return emails;
+
+    return index;
 }
 
-QStringList IncidenceModel::attendeeNames(const int idx) const
+int IncidenceModel::getIndexFromMonth(QDateTime date)
 {
-    auto attendees = m_incidences.at(idx)->attendees();
-    QStringList names {};
-    for (const auto &a : attendees) {
-        names.append(a.name());
+    int index =  -1;
+    int monthName = date.date().month();
+    int yearName = date.date().year();
+
+    for(int i = 0;i < m_incidences.count();i++){
+        auto incidence = m_incidences.at(i);
+
+        if (incidence->dtStart().isValid()) {
+            QDate currentDate = incidence->dtStart().date();
+
+            if(currentDate.year() == yearName && currentDate.month() == monthName){
+               return i;
+            }
+        }
     }
-    return names;
+
+    return index;
 }

@@ -1,54 +1,93 @@
 <!--
-    SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+    SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
     SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Calindori
+# Calendar< img src="./icons/calendar_new.svg"/>
 
-Calendar application for Plasma Mobile
+Calendar application for JingOS.
+
+
 
 ## Features
 
-Calindori is a touch friendly calendar application. It has been designed for mobile devices but it can also run on desktop environments. It offers:
+* Calendar is a touch friendly and beautiful calendar application. It offers:
+* 
+  * Monthly agenda
+  * Multiple calendars
+  * Event management
+  * Date and Event linkage
 
-* Monthly agenda
-* Multiple calendars
-* Event management
-* Task management
-* Calendar import
+* Run on JingOS platform
 
-![](screenshots/calindori_screenshot.png)
+* Brand new UI & UE with JingOS-style , based on JingUI Framework
 
-The calendars that the application handles follow the [ical](https://tools.ietf.org/html/rfc5545) standard.
+* Support keyboard & touchpad & mouse & screen touch
 
-## Installation
+* All keys support pressed / hovered effects
 
-### KDE Neon 
+* Well-designed interface material:
 
-On mobile devices that run KDE Neon, run:
+  * Font
+  * Icon
+  * Picture
+  
+* The calendars that the application handles follow the [ical](https://tools.ietf.org/html/rfc5545) standard.
 
-```
-sudo apt install calindori
-```
 
-### Android
 
-The nightly build of Calindori for Android can be found in the F-Droid instance of KDE. You can add the repository following these [instructions](https://community.kde.org/Android/FDroid) and install  Calindori.
+## Screenshots
+
+JingOS :
+
+![](./launcher.jpeg)
+
+
+
+## Links
+
+* Home page: https://www.jingos.com/
+
+* Project page: https://invent.kde.org/plasma-mobile/calindori
+
+* Issues: https://invent.kde.org/plasma-mobile/calindori/-/issues
+
+* Development channel: https://forum.jingos.com/
+
+
+
+## Dependencies
+
+* Qt5 
+
+* Cmake
+
+* KI18n
+
+* Kirigami (JingOS Version)
+
+* KConfig
+
+* KCalendarCore
+
 
 
 ## Build
 
-To build Calindori from source on Linux, execute the below commands.
+To build Calendar from source on Linux, execute the below commands.
+
+
 
 ### Compile
 
-```
-git clone https://invent.kde.org/kde/calindori.git
-cd calindori
+```sh
+cd calendar
 mkdir build
 cd build
 cmake ..
 make -j$(nproc)
 ```
+
+
 
 #### Run
 
@@ -56,11 +95,7 @@ make -j$(nproc)
 bin/calindori
 ```
 
-*To simulate Plasma Mobile user experience:*
 
-```
-QT_QUICK_CONTROLS_MOBILE=true QT_QUICK_CONTROLS_STYLE=Plasma bin/calindori
-```
 
 #### Install
 

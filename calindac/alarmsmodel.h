@@ -9,6 +9,7 @@
 
 #include <QAbstractListModel>
 #include <KCalendarCore/Alarm>
+#include <KCalendarCore/MemoryCalendar>
 #include <KCalendarCore/FileStorage>
 #include <QDateTime>
 
@@ -73,7 +74,7 @@ private:
     void closeStorages();
     QDateTime parentStartDt(const int idx) const;
 
-    QVector<Calendar::Ptr> m_calendars;
+    QVector<MemoryCalendar::Ptr> m_memory_calendars;
     QVector<FileStorage::Ptr> m_file_storages;
     Alarm::List m_alarms;
     QStringList m_calendar_files;

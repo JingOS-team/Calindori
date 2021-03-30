@@ -26,7 +26,7 @@ Kirigami.ScrollablePage {
         icon.name: "resource-calendar-insert"
         text: i18n("Add")
         onTriggered: {
-            var currentDt = Calindori.CalendarController.localSystemDateTime();
+            var currentDt = _eventController.localSystemDateTime();
             var lStartDt = (incidenceType == 0 && (incidenceStartDt == null || isNaN(incidenceStartDt))) ? new Date(currentDt.getTime() - currentDt.getMinutes()*60000 + 3600000) : incidenceStartDt;
             pageStack.push(incidenceType == 0 ? eventEditor : todoEditor, { startDt: lStartDt } );
         }
@@ -44,7 +44,6 @@ Kirigami.ScrollablePage {
 
     Kirigami.PlaceholderMessage {
         anchors.centerIn: parent
-        icon.name: incidenceType == 0 ? "tag-events" : "view-calendar-tasks"
         width: parent.width - (Kirigami.Units.largeSpacing * 4)
         visible: listView.count == 0
         text: !isNaN(incidenceStartDt) ? i18n("Nothing scheduled for %1", incidenceStartDt.toLocaleDateString(_appLocale, Locale.ShortFormat)) : i18n("Nothing scheduled")
@@ -73,13 +72,7 @@ Kirigami.ScrollablePage {
             topPadding: Kirigami.Units.gridUnit
             bottomPadding: Kirigami.Units.gridUnit
 
-            onClicked: {
-                if(pageStack.lastItem && pageStack.lastItem.hasOwnProperty("isIncidencePage")) {
-                    pageStack.pop(incidencePage);
-                }
-
-                pageStack.push(incidencePage, { incidence: model })
-            }
+            onClicked: pageStack.push(incidencePage, { incidence: model })
         }
     }
 
@@ -97,13 +90,53 @@ Kirigami.ScrollablePage {
 
         IncidencePage {
             calendar: root.calendar
+
+            actions.left: Kirigami.Action {
+                text: i18n("Delete")
+                icon.name: "delete"
+
+                onTriggered: {
+                    deleteSheet.incidenceData = { uid: incidence.uid, summary: incidence.summary, type: incidence.type };
+                    deleteSheet.open();
+                }
+            }
+
+            actions.main: Kirigami.Action {
+                text: i18n("Close")
+                icon.name: "window-close-symbolic"
+
+                onTriggered: pageStack.pop(null)
+            }
+
+            actions.right: Kirigami.Action {
+                text: i18n("Edit")
+                icon.name: "document-edit-symbolic"
+
+                onTriggered: pageStack.push(incidence.type == 0 ? eventEditor : todoEditor, { startDt: incidence.dtstart, uid: incidence.uid, incidenceData: incidence })
+            }
+
+            ConfirmationSheet {
+                id: deleteSheet
+
+                property var incidenceData
+                message: i18n("%1 will be deleted. Proceed?", incidenceData && incidenceData.summary);
+
+                operation: function() {
+                    if(incidenceType == 0) {
+                        _eventController.remove(root.calendar, incidenceData);
+                    } else {
+                        _todoController.remove(root.calendar, incidenceData);
+                    }
+                    pageStack.pop(incidencePage);
+                }
+            }
         }
     }
 
     Component {
         id: eventEditor
 
-        EventEditorPage {
+        EventEditor {
             calendar: localCalendar
 
             onEditcompleted: pageStack.pop(root)
@@ -113,7 +146,7 @@ Kirigami.ScrollablePage {
     Component {
         id: todoEditor
 
-        TodoEditorPage {
+        TodoEditor {
             calendar: localCalendar
 
             onEditcompleted: pageStack.pop(root)

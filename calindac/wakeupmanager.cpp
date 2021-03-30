@@ -12,7 +12,7 @@
 #include <QDBusReply>
 #include <QDebug>
 
-WakeupManager::WakeupManager(QObject *parent) : QObject(parent), m_wakeup_backend {new SolidWakeupBackend {this}}, m_cookie {-1}, m_active {m_wakeup_backend->isValid()}
+WakeupManager::WakeupManager(QObject *parent) : QObject(parent), m_cookie {-1}, m_active {false}
 {
     m_callback_info = QVariantMap({
         {"dbus-service", QString { "org.kde.calindac"} },
@@ -20,11 +20,12 @@ WakeupManager::WakeupManager(QObject *parent) : QObject(parent), m_wakeup_backen
     });
 
     new PowerManagementAdaptor(this);
+    m_wakeup_backend = new SolidWakeupBackend(this);
 
     QDBusConnection dbus = QDBusConnection::sessionBus();
     dbus.registerObject(m_callback_info["dbus-path"].toString(), this);
 
-    connect(m_wakeup_backend, &SolidWakeupBackend::backendChanged, this, &WakeupManager::setActive);
+    checkBackend();
 }
 
 void WakeupManager::scheduleWakeup(const QDateTime wakeupAt)
@@ -39,12 +40,13 @@ void WakeupManager::scheduleWakeup(const QDateTime wakeupAt)
     if (scheduledCookie > 0) {
         qDebug() << "WakeupManager: wake up has been scheduled, wakeup time:" << wakeupAt.toString("dd.MM.yyyy hh:mm:ss") << "Received cookie" << scheduledCookie;
 
-        if (m_cookie > 0 && m_cookie != scheduledCookie) {
+        if (m_cookie > 0) {
             removeWakeup(m_cookie);
         }
 
         m_cookie = scheduledCookie;
     }
+
 }
 
 void WakeupManager::wakeupCallback(int cookie)
@@ -67,14 +69,17 @@ void WakeupManager::removeWakeup(int cookie)
     m_cookie = -1;
 }
 
-bool WakeupManager::hasWakeupFeatures()
+void WakeupManager::checkBackend()
 {
-    if (m_wakeup_backend->isWakeupBackend()) {
+    auto checkCookie = m_wakeup_backend->scheduleWakeup(m_callback_info, QDateTime::currentDateTime().addDays(1).toSecsSinceEpoch()).toInt();
+
+    if (checkCookie > 0) {
         qDebug() << "WakeupManager: the backend is active";
-        return true;
+        m_wakeup_backend->clearWakeup(checkCookie);
+        setActive(true);
     } else {
         qDebug() << "WakeupManager: the backend does not offer wake up features";
-        return false;
+        setActive(false);
     }
 }
 
@@ -87,6 +92,6 @@ void WakeupManager::setActive(const bool activeBackend)
 {
     if (activeBackend != m_active) {
         m_active = activeBackend;
-        Q_EMIT activeChanged(activeBackend);
+        Q_EMIT activeChanged();
     }
 }

@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
-install(FILES calindori.svg DESTINATION ${KDE_INSTALL_FULL_ICONDIR}/hicolor/scalable/apps)
+install(FILES calendar_new.svg DESTINATION ${KDE_INSTALL_FULL_ICONDIR}/hicolor/scalable/apps)

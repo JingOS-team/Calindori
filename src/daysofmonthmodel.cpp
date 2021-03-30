@@ -1,11 +1,16 @@
 /*
  * SPDX-FileCopyrightText: 2019 Nicolas Fella <nicolas.fella@gmx.de>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include "daysofmonthmodel.h"
 #include <QDebug>
+#define FORMAT24H "HH:mm:ss"
+#define FORMAT12H "h:mm:ss ap"
+#include <KSharedConfig>
+#include <KConfigGroup>
 
 void DaysOfMonthModel::update()
 {
@@ -26,6 +31,7 @@ void DaysOfMonthModel::update()
     }
 
     int daysThusFar = daysBeforeCurrentMonth + firstDay.daysInMonth();
+
     if (daysThusFar < totalDays) {
         daysAfterCurrentMonth = totalDays - daysThusFar;
     }
@@ -49,7 +55,6 @@ void DaysOfMonthModel::update()
         day.monthNumber = firstDay.month();
         day.yearNumber = firstDay.year();
         m_dayList << day;
-
     }
 
     if (daysAfterCurrentMonth > 0) {
@@ -64,7 +69,6 @@ void DaysOfMonthModel::update()
     }
 
     m_dayList[QDate::currentDate().day() + daysBeforeCurrentMonth - 1].isToday = QDate::currentDate().month() == m_month && QDate::currentDate().year() == m_year;
-
     endResetModel();
 }
 
@@ -101,6 +105,19 @@ QHash<int, QByteArray> DaysOfMonthModel::roleNames() const
 
 void DaysOfMonthModel::goNextMonth()
 {
+    QDateTime nowTime = QDateTime::currentDateTime();
+
+    unsigned long nowUint = nowTime.toTime_t();
+    nowUint = nowUint*1000+nowTime.time().msec();
+    unsigned long lastUint = lastChangedTime.toTime_t();
+    lastUint = lastUint*1000+lastChangedTime.time().msec();
+
+    if(nowUint - lastUint <  600 ) {
+        return;
+    }
+
+    lastChangedTime  = nowTime;
+
     if (m_month == 12) {
         m_month = 1;
         m_year++;
@@ -110,11 +127,25 @@ void DaysOfMonthModel::goNextMonth()
 
     Q_EMIT yearChanged();
     Q_EMIT monthChanged();
+
     update();
 }
 
 void DaysOfMonthModel::goPreviousMonth()
 {
+    QDateTime nowTime = QDateTime::currentDateTime();
+
+    unsigned long nowUint = nowTime.toTime_t();
+    nowUint = nowUint*1000+nowTime.time().msec();
+    unsigned long lastUint = lastChangedTime.toTime_t();
+    lastUint = lastUint*1000+lastChangedTime.time().msec();
+
+    if(nowUint - lastUint <  600 ) {
+        return;
+    }
+
+    lastChangedTime  = nowTime;
+
     if (m_month == 1) {
         m_month = 12;
         m_year--;
@@ -124,6 +155,7 @@ void DaysOfMonthModel::goPreviousMonth()
 
     Q_EMIT yearChanged();
     Q_EMIT monthChanged();
+    
     update();
 }
 
@@ -196,4 +228,13 @@ void DaysOfMonthModel::setWeeks(int weeks)
         Q_EMIT weeksChanged();
         update();
     }
+}
+
+bool DaysOfMonthModel::is24HourFormat()
+{
+    KSharedConfig::Ptr  m_localeConfig = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+    KConfigGroup  m_localeSettings = KConfigGroup(m_localeConfig, "Locale");
+
+    QString timeFormat =  m_localeSettings.readEntry("TimeFormat", QStringLiteral(FORMAT24H));
+    return (timeFormat == FORMAT24H) ;
 }

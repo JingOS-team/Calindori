@@ -8,7 +8,7 @@
 #define LOCALCALENDAR_H
 
 #include <QSharedPointer>
-#include <KCalendarCore/Calendar>
+#include <KCalendarCore/MemoryCalendar>
 #include <KCalendarCore/FileStorage>
 #include <KCalendarCore/Event>
 #include <QVariantMap>
@@ -22,41 +22,29 @@ class LocalCalendar : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
-    Q_PROPERTY(QString ownerName READ ownerName WRITE setOwnerName NOTIFY ownerNameChanged)
-    Q_PROPERTY(QString ownerEmail READ ownerEmail WRITE setOwnerEmail NOTIFY ownerEmailChanged)
-    Q_PROPERTY(bool isExternal READ isExternal NOTIFY isExternalChanged)
-    Q_PROPERTY(QSharedPointer<Calendar> calendar READ calendar WRITE setCalendar NOTIFY calendarChanged)
+    Q_PROPERTY(QSharedPointer<MemoryCalendar> memorycalendar READ memorycalendar WRITE setMemorycalendar NOTIFY memorycalendarChanged)
 
 public:
     explicit LocalCalendar(QObject *parent = nullptr);
     ~LocalCalendar() override;
 
-    Calendar::Ptr calendar();
+    MemoryCalendar::Ptr memorycalendar();
     QString name() const;
-    QString ownerName() const;
-    QString ownerEmail() const;
-    bool isExternal() const;
 
-    void setCalendar(Calendar::Ptr calendar);
-    void setName(QString &calendarName);
-    void setOwnerName(QString &ownerName);
-    void setOwnerEmail(QString &ownerEmail);
-
+    void setMemorycalendar(MemoryCalendar::Ptr memoryCalendar);
+    void setName(QString calendarName);
+    Q_INVOKABLE static QVariantMap importCalendar(const QString &calendarName, const QUrl &sourcePath);
+    Q_INVOKABLE static QString fileNameFromUrl(const QUrl &sourcePath);
     Q_INVOKABLE int todosCount(const QDate &date) const;
     Q_INVOKABLE int eventsCount(const QDate &date) const;
-
 public Q_SLOTS:
     void deleteCalendar();
     bool save();
-
 Q_SIGNALS:
-    void calendarChanged();
+    void memorycalendarChanged();
     void nameChanged();
     void todosChanged();
     void eventsChanged();
-    void ownerNameChanged();
-    void ownerEmailChanged();
-    void isExternalChanged();
 
 private:
     static QVariantMap canCreateFile(const QString &calendarName);
@@ -64,7 +52,7 @@ private:
     bool loadStorage();
     void reloadStorage();
 
-    Calendar::Ptr m_calendar;
+    MemoryCalendar::Ptr m_calendar;
     FileStorage::Ptr m_cal_storage;
     QString m_name;
     QString m_fullpath;
@@ -74,3 +62,4 @@ private:
 };
 
 #endif // LOCALCALENDAR_H
+

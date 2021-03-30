@@ -26,7 +26,7 @@ CalindoriConfig::CalindoriConfig(QObject *parent)
     : QObject(parent)
     , d(new Private)
 {
-    if (internalCalendars().isEmpty() && (d->config.group("general").readEntry("externalCalendars", QString())).isEmpty()) {
+    if ((d->config.group("general").readEntry("calendars", QString())).isEmpty() && (d->config.group("general").readEntry("externalCalendars", QString())).isEmpty()) {
         qDebug() << "No calendar found, creating a default one";
         addInternalCalendar("personal");
         setActiveCalendar("personal");
@@ -75,16 +75,17 @@ QVariantMap CalindoriConfig::canAddCalendar(const QString &calendar)
         });
     }
 
+    auto internalCalendars = d->config.group("general").readEntry("calendars", QString());
     auto externalCalendars = d->config.group("general").readEntry("externalCalendars", QString());
 
-    if (internalCalendars().isEmpty() && externalCalendars.isEmpty()) {
+    if (internalCalendars.isEmpty() && externalCalendars.isEmpty()) {
         return QVariantMap({
             {"success", true},
             {"reason", QString()}
         });
     }
 
-    auto calendarsList = internalCalendars();
+    auto calendarsList = internalCalendars.isEmpty() ? QStringList() : internalCalendars.split(";");
     if (!(externalCalendars.isEmpty())) {
         calendarsList.append(externalCalendars.split(";"));
     }
@@ -102,7 +103,7 @@ QVariantMap CalindoriConfig::canAddCalendar(const QString &calendar)
     });
 }
 
-QVariantMap CalindoriConfig::addInternalCalendar(const QString &calendar, const QString &ownerName, const QString &ownerEmail)
+QVariantMap CalindoriConfig::addInternalCalendar(const QString &calendar)
 {
     QVariantMap canAddResult = canAddCalendar(calendar);
 
@@ -112,13 +113,15 @@ QVariantMap CalindoriConfig::addInternalCalendar(const QString &calendar, const 
         });
     }
 
-    QStringList calendars = internalCalendars();
-    calendars.append(calendar);
-    d->config.group("general").writeEntry("calendars", calendars.join(";"));
-
+    auto calsStr = d->config.group("general").readEntry("calendars", QString());
+    if (calsStr.isEmpty()) {
+        d->config.group("general").writeEntry("calendars", calendar);
+    } else {
+        QStringList calendarsList = calsStr.split(";");
+        calendarsList.append(calendar);
+        d->config.group("general").writeEntry("calendars", calendarsList.join(";"));
+    }
     d->config.sync();
-    setOwnerInfo(calendar, ownerName, ownerEmail);
-
     Q_EMIT internalCalendarsChanged();
 
     return QVariantMap({
@@ -126,7 +129,7 @@ QVariantMap CalindoriConfig::addInternalCalendar(const QString &calendar, const 
     });
 }
 
-QVariantMap CalindoriConfig::addExternalCalendar(const QString &calendar, const QString &ownerName, const QString &ownerEmail, const QUrl &calendarPathUrl)
+QVariantMap CalindoriConfig::addExternalCalendar(const QString &calendar, const QUrl &calendarPathUrl)
 {
     QVariantMap canAddResult = canAddCalendar(calendar);
 
@@ -147,8 +150,6 @@ QVariantMap CalindoriConfig::addExternalCalendar(const QString &calendar, const 
     d->config.group(calendar).writeEntry("file", calendarPathUrl.toString(QUrl::RemoveScheme));
     d->config.group(calendar).writeEntry("external", true);
     d->config.sync();
-
-    setOwnerInfo(calendar, ownerName, ownerEmail);
     Q_EMIT externalCalendarsChanged();
 
     return QVariantMap({
@@ -160,7 +161,8 @@ void CalindoriConfig::removeCalendar(const QString &calendar)
 {
     d->config.reparseConfiguration();
 
-    QStringList iCalendarsList = internalCalendars();
+    auto iCalendarsStr = d->config.group("general").readEntry("calendars", QString());
+    auto iCalendarsList = iCalendarsStr.isEmpty() ? QStringList() : iCalendarsStr.split(";");
     auto eCalendarsStr = d->config.group("general").readEntry("externalCalendars", QString());
     auto eCalendarsList = eCalendarsStr.isEmpty() ? QStringList() : eCalendarsStr.split(";");
 
@@ -252,56 +254,4 @@ bool CalindoriConfig::isExternal(const QString &calendarName)
     }
 
     return false;
-}
-
-void CalindoriConfig::setOwnerInfo(const QString &calendar, const QString &ownerName, const QString &ownerEmail)
-{
-    setOwnerName(calendar, ownerName);
-    setOwnerEmail(calendar, ownerEmail);
-}
-
-QString CalindoriConfig::ownerName(const QString &calendarName)
-{
-    if (d->config.hasGroup(calendarName) && d->config.group(calendarName).hasKey("ownerName")) {
-        return d->config.group(calendarName).readEntry("ownerName", QString());
-    }
-
-    return QString();
-}
-
-QString CalindoriConfig::ownerEmail(const QString &calendarName)
-{
-    if (d->config.hasGroup(calendarName) && d->config.group(calendarName).hasKey("ownerEmail")) {
-        return d->config.group(calendarName).readEntry("ownerEmail", QString());
-    }
-
-    return QString();
-}
-
-void CalindoriConfig::setOwnerName(const QString &calendar, const QString &ownerName)
-{
-    d->config.group(calendar).writeEntry("ownerName", ownerName);
-    d->config.sync();
-
-    if (isExternal(calendar)) {
-        Q_EMIT externalCalendarsChanged();
-
-        return;
-    }
-
-    Q_EMIT internalCalendarsChanged();
-}
-
-void CalindoriConfig::setOwnerEmail(const QString &calendar, const QString &ownerEmail)
-{
-    d->config.group(calendar).writeEntry("ownerEmail", ownerEmail);
-    d->config.sync();
-
-    if (isExternal(calendar)) {
-        Q_EMIT externalCalendarsChanged();
-
-        return;
-    }
-
-    Q_EMIT internalCalendarsChanged();
 }

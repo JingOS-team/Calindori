@@ -24,7 +24,6 @@ public:
 
     LocalCalendar *calendar() const;
     void setCalendar(LocalCalendar *calendar);
-
 Q_SIGNALS:
     void calendarChanged();
 

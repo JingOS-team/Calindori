@@ -14,7 +14,6 @@
         "--device=dri",
         "--filesystem=home",
         "--talk-name=org.freedesktop.Notifications",
-        "--talk-name=org.kde.Solid.PowerManagement",
         "--own-name=org.kde.calindac"
     ],
     "separate-locales": false,
@@ -31,8 +30,8 @@
                 {
                     "type": "git",
                     "url": "https://anongit.kde.org/kcalendarcore.git",
-                    "tag": "v5.76.0",
-                    "commit": "0d1c3cf8cb32d94e0cd85fc555f0ef5da81bf81d"
+                    "tag": "v5.74.0",
+                    "commit": "87f453f42af271182c4d74f09f8e3b2040f9595c"
                 }
             ],
             "modules": [
@@ -52,18 +51,6 @@
                     "cleanup": [
                         "/share/gtk-doc"
                     ]
-                }
-            ]
-        },
-        {
-            "name": "kpeople",
-            "buildsystem": "cmake-ninja",
-            "sources": [
-                {
-                "type": "git",
-                "url": "https://invent.kde.org/frameworks/kpeople.git",
-                "tag": "v5.76.0",
-                "commit": "782a9316014563a79aaed32d6ac6f3cdb7329868"
                 }
             ]
         },

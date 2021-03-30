@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -41,8 +42,7 @@ public:
         DayTodos,
         AllIncidences,
         AllEvents,
-        AllTodos,
-        OrganizerName
+        AllTodos
     };
 
     enum Roles {
@@ -63,6 +63,7 @@ public:
         RepeatEvery,
         RepeatStopAfter,
         DisplayStartDate,
+        DisplayStartDateOfWeek,
         Completed,
         IncidenceType,
         DisplayStartEndTime,
@@ -73,11 +74,7 @@ public:
         Due,
         ValidStartDt,
         ValidEndDt,
-        ValidDueDt,
-        AttendeeEmails,
-        DisplayAttendeeEmails,
-        DisplaytAttendeeNames,
-        IncidenceStatus
+        ValidDueDt
     };
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -101,6 +98,11 @@ public:
 
     QLocale appLocale() const;
     void setAppLocale(const QLocale &qmlLocale);
+
+    Q_INVOKABLE int getIndexFromIncidence(QDateTime date);
+    Q_INVOKABLE int getIndexFromMonth(QDateTime date);
+    Q_INVOKABLE void loadIncidences();
+    Q_INVOKABLE QString displayStartDateOfWeek(const int idx) const;
 
 Q_SIGNALS:
     void filterDtChanged();
@@ -130,7 +132,6 @@ private:
      */
     ushort repeatPeriodType(const int idx) const;
 
-    void loadIncidences();
     Incidence::List hourIncidences() const;
     Incidence::List hourEvents() const;
     Incidence::List hourTodos() const;
@@ -152,8 +153,6 @@ private:
     bool isHourEvent(const Event::Ptr event) const;
     bool withinFilter(const KCalendarCore::Event::Ptr event, const QDate &filterDate) const;
     void setCalendarFilter();
-    QStringList attendeeEmails(const int idx) const;
-    QStringList attendeeNames(const int idx) const;
 
     int m_filter_mode;
     QDate m_filter_dt;

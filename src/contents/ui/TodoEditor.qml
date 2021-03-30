@@ -7,7 +7,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
-import org.kde.kirigami 2.12 as Kirigami
+import org.kde.kirigami 2.3 as Kirigami
 import org.kde.calindori 0.1 as Calindori
 
 Kirigami.Page {
@@ -16,7 +16,7 @@ Kirigami.Page {
     property alias startDt: startDateSelector.selectorDate
     property string uid
     property alias summary: summary.text
-    property alias description: incidenceEditor.description
+    property alias description: description.text
     property alias startHour: startTimeSelector.selectorHour
     property alias startMinute: startTimeSelector.selectorMinutes
     property alias startPm: startTimeSelector.selectorPm
@@ -25,8 +25,8 @@ Kirigami.Page {
     property alias dueMinute: dueDtTimeSelector.selectorMinutes
     property alias duePm: dueDtTimeSelector.selectorPm
     property alias allDay: allDaySelector.checked
-    property alias location: incidenceEditor.location
-    property alias completed: incidenceEditor.completed
+    property alias location: location.text
+    property alias completed: completed.checked
     property var calendar
     property var incidenceData
 
@@ -35,26 +35,49 @@ Kirigami.Page {
     title: uid == "" ? i18n("New task") : root.summary
 
     ColumnLayout {
+
         anchors.centerIn: parent
-        spacing: Kirigami.Units.smallSpacing
+
+        Controls2.Label {
+            visible: root.startDt != undefined && !isNaN(root.startDt)
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+            font.pointSize: Kirigami.Units.fontMetrics.font.pointSize * 1.2
+            text: incidenceData && !incidenceData.validStartDt ? incidenceData.displayStartDate : (!isNaN(root.startDt) ? root.startDt.toLocaleDateString(_appLocale) : "")
+        }
 
         Kirigami.FormLayout {
-            id: basicInfo
+            id: todoCard
 
-            Layout.fillWidth: true
+            enabled: !root.completed
+
+            Kirigami.Separator {
+                Kirigami.FormData.isSection: true
+            }
+
+            Controls2.Label {
+                id: calendarName
+
+                Kirigami.FormData.label: i18n("Calendar:")
+                Layout.fillWidth: true
+                text: root.calendar.name
+            }
+
+            Kirigami.Separator {
+                Kirigami.FormData.isSection: true
+            }
 
             Controls2.TextField {
                 id: summary
 
-                enabled: !root.completed
-                text: incidenceData ? incidenceData.summary : ""
+                Layout.fillWidth: true
                 Kirigami.FormData.label: i18n("Summary:")
+                text: incidenceData ? incidenceData.summary : ""
             }
 
             RowLayout {
                 Kirigami.FormData.label: i18n("Start:")
                 spacing: 0
-                enabled: !root.completed
 
                 DateSelectorButton {
                     id: startDateSelector
@@ -91,7 +114,6 @@ Kirigami.Page {
             RowLayout {
                 Kirigami.FormData.label: i18n("Due:")
                 spacing: 0
-                enabled: !root.completed
 
                 DateSelectorButton {
                     id: dueDateSelector
@@ -137,51 +159,104 @@ Kirigami.Page {
 
                     onClicked: dueDateSelector.selectorDate = new Date("invalid")
                 }
+
+
             }
 
             Controls2.CheckBox {
                 id: allDaySelector
 
-                enabled: (!isNaN(root.startDt) || !isNaN(root.dueDt)) && !root.completed
+                enabled: !isNaN(root.startDt) || !isNaN(root.dueDt)
+
                 checked: incidenceData ? incidenceData.allday: false
-                Kirigami.FormData.label: i18n("All day:")
+                text: i18n("All day")
             }
 
-            Item {
-                height: Kirigami.Units.largeSpacing
+            Kirigami.Separator {
+                Kirigami.FormData.isSection: true
             }
+
+            Controls2.TextField {
+                id: location
+
+                Layout.fillWidth: true
+                Kirigami.FormData.label: i18n("Location:")
+                text: incidenceData ? incidenceData.location : ""
+            }
+
         }
 
-        Controls2.TabBar {
-            id: bar
-
+        Kirigami.Separator {
             Layout.fillWidth: true
+        }
 
-            Controls2.TabButton {
-                text: i18n("Details")
-            }
+        Controls2.TextArea {
+            id: description
 
-            Controls2.TabButton {
+            enabled: !root.completed
+            Layout.fillWidth: true
+            Layout.minimumWidth: Kirigami.Units.gridUnit * 4
+            Layout.minimumHeight: Kirigami.Units.gridUnit * 4
+            Layout.maximumWidth: todoCard.width
+            wrapMode: Text.WrapAnywhere
+            text: incidenceData ? incidenceData.description : ""
+            placeholderText: i18n("Description")
+        }
+
+        Kirigami.Separator {
+            Layout.fillWidth: true
+        }
+
+        RowLayout {
+            enabled: root.startDt != undefined && !isNaN(root.startDt)
+
+            Controls2.Label {
+                id: remindersLabel
+
+                Layout.fillWidth: true
                 text: i18n("Reminders")
             }
+
+            Controls2.ToolButton {
+                text: i18n("Add")
+
+                onClicked: reminderEditor.open()
+            }
         }
 
-        StackLayout {
-            currentIndex: bar.currentIndex
+        Kirigami.Separator {
+            Layout.fillWidth: true
+        }
 
-            IncidenceEditor {
-                id: incidenceEditor
+        Repeater {
+            id: alarmsList
 
-                calendar: root.calendar
-                incidenceData: root.incidenceData
-                incidenceType: 1
+            model: incidenceAlarmsModel
+
+            delegate: Kirigami.SwipeListItem {
+                contentItem: Controls2.Label {
+                    text: model.display
+                    wrapMode: Text.WordWrap
+                }
+
+                Layout.fillWidth: true
+
+                actions: [
+                     Kirigami.Action {
+                        id: deleteAlarm
+
+                        iconName: "delete"
+                        onTriggered: incidenceAlarmsModel.removeAlarm(model.index)
+                    }
+                ]
             }
+        }
 
-            Reminders {
-                enabled: root.startDt !== undefined && !isNaN(root.startDt) && !root.completed
+        Controls2.CheckBox {
+            id: completed
 
-                alarmsModel: incidenceAlarmsModel
-            }
+            text: i18n("Completed")
+            checked: incidenceData ? incidenceData.completed: false
         }
     }
 
@@ -206,27 +281,17 @@ Kirigami.Page {
             onTriggered: {
                 var vtodo = { "uid": root.uid, "summary":root.summary, "startDate": root.startDt , "startHour": root.startHour + (root.startPm ? 12 : 0), "startMinute": root.startMinute, "allDay": root.allDay, "description":  root.description, "location": root.location, "completed": root.completed, "dueDate": root.dueDt, "dueHour": root.dueHour + (root.duePm ? 12 : 0), "dueMinute": root.dueMinute, "alarms": incidenceAlarmsModel.alarms() };
 
-                var validation = Calindori.CalendarController.validateTodo(vtodo);
+                var validation = _todoController.validate(vtodo);
 
                 if(validation.success) {
-                    validationFooter.visible = false;
-                    Calindori.CalendarController.upsertTodo(root.calendar, vtodo);
+                    _todoController.addEdit(root.calendar, vtodo);
                     editcompleted();
                 }
                 else {
-                    validationFooter.text = validation.reason;
-                    validationFooter.visible = true;
+                    showPassiveNotification(validation.reason);
                 }
             }
         }
-    }
-
-    footer: Kirigami.InlineMessage {
-        id: validationFooter
-
-        showCloseButton: true
-        type: Kirigami.MessageType.Warning
-        visible: false
     }
 
     Calindori.IncidenceAlarmsModel {
@@ -236,4 +301,9 @@ Kirigami.Page {
         alarmProperties: { "calendar" : root.calendar, "uid": root.uid }
     }
 
+    ReminderEditor {
+        id: reminderEditor
+
+        onOffsetSelected: incidenceAlarmsModel.addAlarm(offset)
+    }
 }

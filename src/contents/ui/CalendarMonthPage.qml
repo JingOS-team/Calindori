@@ -1,18 +1,20 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 import QtQuick 2.7
 import org.kde.kirigami 2.0 as Kirigami
+import QtQuick.Layouts 1.3
+import QtGraphicalEffects 1.2
 
 Kirigami.Page {
     id: root
 
-    property alias dayRectangleWidth: calendarMonthView.dayRectangleWidth
-
     property alias selectedDate: calendarMonthView.selectedDate
+
 
     /**
      * @brief The active calendar, which is the host of todos, events, etc.
@@ -20,11 +22,13 @@ Kirigami.Page {
      */
     property var calendar
 
+
     /**
      *  @brief The index of the last contextual action triggered
      *
      */
     property int latestContextualAction: -1
+
 
     /**
      *  @brief When set to a valid contextual action index, as soon as the page is loaded the corresponding contextual action is also opened
@@ -32,102 +36,70 @@ Kirigami.Page {
      */
     property int loadWithAction: -1
 
-   /**
+
+    /**
     * @brief Emitted when the hosted SwipeView index is set to the first or the last container item
     *
     */
     signal pageEnd(var lastDate, var lastActionIndex)
 
-    title: calendarMonthView.displayedMonthName + " " + calendarMonthView.displayedYear
+    globalToolBarStyle: Kirigami.ApplicationHeaderStyle.None
 
-    actions {
-        left: Kirigami.Action {
-            iconName: "go-down"
-            text: i18n("Previous")
+    padding: 0
 
-            onTriggered: calendarMonthView.previousMonth()
-        }
-
-        main: Kirigami.Action {
-            iconName: "view-calendar-day"
-            text: i18n("Today")
-
-            onTriggered: calendarMonthView.goToday()
-        }
-
-        right: Kirigami.Action {
-            iconName: "go-up"
-            text: i18n("Next")
-
-            onTriggered: calendarMonthView.nextMonth()
-        }
-
-        contextualActions: [
-            Kirigami.Action {
-                iconName: "view-calendar-tasks"
-                text: i18n("Tasks")
-
-                onTriggered: {
-                    latestContextualAction = 0;
-                    pageStack.pop(root);
-                    pageStack.push(todosCardView);
-                }
-            },
-
-            Kirigami.Action {
-                iconName: "tag-events"
-                text: i18n("Events")
-
-                onTriggered: {
-                    latestContextualAction = 1;
-                    pageStack.pop(root);
-                    pageStack.push(eventsCardView);
-                }
-            }
-        ]
-    }
-
-    Component.onCompleted: {
-        if(loadWithAction >= 0)
-        {
-            contextualActions[loadWithAction].trigger();
-        }
-    }
-
-    CalendarMonthView {
-        id: calendarMonthView
+    Item {
+        id: rowMain
 
         anchors.fill: parent
-        cal: root.calendar
+        anchors.top: parent.top
 
-        showHeader: true
-        showMonthName: false
-        showYear: false
+        signal setListViewItem(int index)
+        signal dayClickFindIndex(date d)
+        signal scheduleListViewClicked(var model, var incidenceAlarmsModel)
+        signal eventAddCompleted
+        signal eventCancelCompleted
 
-        onSelectedDateChanged: {
-            if (Kirigami.Settings.isMobile && pageStack.depth > 1) {
-                pageStack.pop(null);
-            }
+        CalendarMonthView {
+            id: calendarMonthView
+
+            anchors.left: parent.left
+
+            width: parent.width * 0.7
+            height: parent.height
+
+            cal: root.calendar
+            showHeader: true
+            showMonthName: false
+            showYear: false
         }
 
-        onViewEnd: pageEnd(lastDate, (pageStack.depth > 1) ? root.latestContextualAction : -1)
-    }
+        CalendarScheduleView {
+            id: calendarScheduleView
 
-    Component {
-        id: todosCardView
+            anchors.left: calendarMonthView.right
 
-        TodosCardView {
-            calendar: localCalendar
-            todoDt: root.selectedDate
+            width: parent.width * 0.3
+            height: parent.height
         }
-    }
 
-    Component {
-        id: eventsCardView
+        onDayClickFindIndex: {
+            calendarScheduleView.positionListViewFromDate(d)
+        }
 
-        EventsCardView {
-            calendar: localCalendar
-            eventStartDt: root.selectedDate
+        onSetListViewItem: {
+            calendarScheduleView.setCurrentListViewIndex(index)
+        }
+
+        onScheduleListViewClicked: {
+            calendarMonthView.popShowMessage(model, incidenceAlarmsModel)
+        }
+
+        onEventAddCompleted: {
+            calendarScheduleView.refreshListView()
+        }
+
+        onEventCancelCompleted: {
+            calendarScheduleView.cancelHighLight()
         }
     }
 }

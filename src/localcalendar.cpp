@@ -9,7 +9,6 @@
 #include "alarmchecker.h"
 #include <QDebug>
 #include <KCalendarCore/Todo>
-#include <KCalendarCore/MemoryCalendar>
 #include <QFile>
 #include <QFileInfo>
 #include <QStandardPaths>
@@ -25,7 +24,7 @@ LocalCalendar::LocalCalendar(QObject *parent)
 
 LocalCalendar::~LocalCalendar() = default;
 
-Calendar::Ptr LocalCalendar::calendar()
+MemoryCalendar::Ptr LocalCalendar::memorycalendar()
 {
     reloadStorage();
     return m_calendar;
@@ -36,20 +35,20 @@ QString LocalCalendar::name() const
     return m_name;
 }
 
-void LocalCalendar::setName(QString &calendarName)
+void LocalCalendar::setName(QString calendarName)
 {
     if (m_name != calendarName) {
         loadCalendar(calendarName);
     }
 }
 
-void LocalCalendar::setCalendar(Calendar::Ptr calendar)
+void LocalCalendar::setMemorycalendar(MemoryCalendar::Ptr memoryCalendar)
 {
-    if (m_calendar != calendar) {
-        m_calendar = calendar;
+    if (m_calendar != memoryCalendar) {
+        m_calendar = memoryCalendar;
     }
 
-    Q_EMIT calendarChanged();
+    Q_EMIT memorycalendarChanged();
 }
 
 int LocalCalendar::todosCount(const QDate &date) const
@@ -115,6 +114,43 @@ QVariantMap LocalCalendar::canCreateFile(const QString &calendarName)
     return result;
 }
 
+QVariantMap LocalCalendar::importCalendar(const QString &calendarName, const QUrl &sourcePath)
+{
+    QVariantMap result;
+    result["success"] = QVariant(false);
+
+    MemoryCalendar::Ptr calendar(new MemoryCalendar(QTimeZone::systemTimeZoneId()));
+    FileStorage::Ptr storage(new FileStorage(calendar));
+
+    QVariantMap canCreateCheck = canCreateFile(calendarName);
+    if (!(canCreateCheck["success"].toBool())) {
+        result["reason"] = QVariant(canCreateCheck["reason"].toString());
+
+        return result;
+    }
+
+    storage->setFileName(sourcePath.toString(QUrl::RemoveScheme));
+
+    if (!(storage->load())) {
+        result["reason"] = QVariant(QString(i18n("The calendar file is not valid")));
+
+        return result;
+    }
+
+    storage->setFileName(canCreateCheck["targetPath"].toString());
+
+    if (!(storage->save())) {
+        result["reason"] = QVariant(QString(i18n("The calendar file cannot be saved")));
+
+        return result;
+    }
+
+    result["success"] = QVariant(true);
+    result["reason"] = QVariant(QString());
+
+    return result;
+}
+
 void LocalCalendar::loadCalendar(const QString &calendarName)
 {
     m_fullpath = m_config->calendarFile(calendarName);
@@ -125,6 +161,11 @@ void LocalCalendar::loadCalendar(const QString &calendarName)
         Q_EMIT todosChanged();
         Q_EMIT eventsChanged();
     }
+}
+
+QString LocalCalendar::fileNameFromUrl(const QUrl &sourcePath)
+{
+    return sourcePath.fileName();
 }
 
 void LocalCalendar::reloadStorage()
@@ -153,7 +194,7 @@ bool LocalCalendar::loadStorage()
         return false;
     }
 
-    Calendar::Ptr calendar(new MemoryCalendar(QTimeZone::systemTimeZoneId()));
+    MemoryCalendar::Ptr calendar(new MemoryCalendar(QTimeZone::systemTimeZoneId()));
     FileStorage::Ptr storage(new FileStorage(calendar));
     storage->setFileName(m_fullpath);
 
@@ -170,38 +211,9 @@ bool LocalCalendar::loadStorage()
         m_calendar = calendar;
         m_fs_sync_dt = QDateTime::currentDateTime();
         m_alarm_checker->scheduleAlarmCheck();
-        Q_EMIT calendarChanged();
+        Q_EMIT memorycalendarChanged();
         return true;
     }
 
     return false;
-}
-
-QString LocalCalendar::ownerName() const
-{
-    return m_config->ownerName(m_name);
-}
-
-QString LocalCalendar::ownerEmail() const
-{
-    return m_config->ownerEmail(m_name);
-}
-
-bool LocalCalendar::isExternal() const
-{
-    return m_config->isExternal(m_name);
-}
-
-void LocalCalendar::setOwnerName(QString &ownerName)
-{
-    m_config->setOwnerName(m_name, ownerName);
-
-    Q_EMIT ownerNameChanged();
-}
-
-void LocalCalendar::setOwnerEmail(QString &ownerEmail)
-{
-    m_config->setOwnerEmail(m_name, ownerEmail);
-
-    Q_EMIT ownerEmailChanged();
 }

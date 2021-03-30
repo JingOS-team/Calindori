@@ -7,8 +7,8 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
-import org.kde.kirigami 2.6 as Kirigami
-import org.kde.calindori 0.1 as Calindori
+import org.kde.kirigami 2.0 as Kirigami
+import org.kde.calindori 0.1
 
 ListView {
     id: root
@@ -123,7 +123,7 @@ ListView {
                 rows: wideScreen ? 1 : -1
 
                 Repeater {
-                    model: Calindori.IncidenceModel {
+                    model: IncidenceModel {
                         appLocale: _appLocale
                         calendar: root.cal
                         filterDt: moveDate(root.selectedWeekDate, dayListItem.weekDay)
@@ -136,13 +136,7 @@ ListView {
 
                         Layout.fillWidth: true
 
-                        onClicked: {
-                            if(pageStack.lastItem && pageStack.lastItem.hasOwnProperty("isIncidencePage")) {
-                                pageStack.pop(incidencePage);
-                            }
-
-                            pageStack.push(incidencePage, { incidence: model })
-                        }
+                        onClicked: pageStack.push(incidencePage, { incidence: model })
                     }
                 }
             }
@@ -156,13 +150,37 @@ ListView {
 
         IncidencePage {
             calendar: root.cal
+
+            actions.left: Kirigami.Action {
+                text: i18n("Delete")
+                icon.name: "delete"
+
+                onTriggered: {
+                    deleteSheet.incidenceData = { uid: incidence.uid, summary: incidence.summary, type: incidence.type };
+                    deleteSheet.open();
+                }
+            }
+
+            actions.main: Kirigami.Action {
+                text: i18n("Close")
+                icon.name: "window-close-symbolic"
+
+                onTriggered: pageStack.pop(null)
+            }
+
+            actions.right: Kirigami.Action {
+                text: i18n("Edit")
+                icon.name: "document-edit-symbolic"
+
+                onTriggered: pageStack.push(incidence.type == 0 ? eventEditor : todoEditor, { startDt: incidence.dtstart, uid: incidence.uid, incidenceData: incidence })
+            }
         }
     }
 
     Component {
         id: eventEditor
 
-        EventEditorPage {
+        EventEditor {
             calendar: root.cal
 
             onEditcompleted: removeEditorPage(eventEditor)
@@ -172,10 +190,29 @@ ListView {
     Component {
         id: todoEditor
 
-        TodoEditorPage {
+        TodoEditor {
             calendar: root.cal
 
             onEditcompleted: removeEditorPage(todoEditor)
+        }
+    }
+
+    ConfirmationSheet {
+        id: deleteSheet
+
+        property var incidenceData
+
+        message: i18n("%1 will be deleted. Proceed?", incidenceData && incidenceData.summary);
+        operation: function() {
+            if(incidenceData.type == 0)
+            {
+                _eventController.remove(root.cal, incidenceData);
+            }
+            else
+            {
+                _todoController.remove(root.cal, incidenceData);
+            }
+            pageStack.pop(incidencePage);
         }
     }
 }

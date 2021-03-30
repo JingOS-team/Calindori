@@ -9,34 +9,27 @@ import org.kde.kirigami 2.0 as Kirigami
 import org.kde.calindori 0.1 as Calindori
 
 Kirigami.Action {
-    id: root
 
     property bool isCalendar: true
-    property alias calendarName: root.text
-    property var loadedCalendar
-    property bool activeCalendar: _calindoriConfig !== null ? (_calindoriConfig.activeCalendar === root.calendarName) : false
-
-    iconName: activeCalendar ? "object-select-symbolic" : ""
 
     signal deleteCalendar
+
+    enabled: _calindoriConfig != null ? (_calindoriConfig.activeCalendar != text) : false
 
     Kirigami.Action {
         text: i18n("Activate")
         iconName: "dialog-ok"
-        visible: !root.activeCalendar
 
-        onTriggered: {
-            _calindoriConfig.activeCalendar = root.calendarName;
-            showPassiveNotification(i18n("Calendar %1 has been activated", root.calendarName));
-        }
+        onTriggered: _calindoriConfig.activeCalendar = parent.text
     }
 
     Kirigami.Action {
         text: i18n("Delete")
         iconName: "delete"
-        visible: !_calindoriConfig.isExternal(root.calendarName) && !root.activeCalendar
+        visible: !_calindoriConfig.isExternal(parent.text)
+
         onTriggered: {
-            deleteSheet.calendarName = root.calendarName;
+            deleteSheet.calendarName = parent.text;
             deleteSheet.open();
         }
     }
@@ -44,16 +37,9 @@ Kirigami.Action {
     Kirigami.Action {
         text: i18n("Remove")
         iconName: "remove"
-        visible: _calindoriConfig.isExternal(root.calendarName) && !root.activeCalendar
+        visible: _calindoriConfig.isExternal(parent.text)
 
-        onTriggered: _calindoriConfig.removeCalendar(root.calendarName);
-    }
-
-    Kirigami.Action {
-        text: i18n("Edit")
-        iconName: "edit-entry"
-
-        onTriggered: pageStack.layers.push(editor)
+        onTriggered: _calindoriConfig.removeCalendar(parent.text);
     }
 
     ConfirmationSheet {
@@ -69,25 +55,4 @@ Kirigami.Action {
         }
     }
 
-    Component {
-        id: editor
-
-        CalendarEditor {
-            mode: CalendarEditor.Mode.Edit
-            calendarName: root.calendarName
-            loadedCalendar: root.loadedCalendar
-            isActive: root.activeCalendar
-            ownerName: _calindoriConfig.ownerName(root.calendarName)
-            ownerEmail: _calindoriConfig.ownerEmail(root.calendarName)
-
-            onCalendarEditorCancelled: pageStack.layers.pop()
-            onCalendarEditorSaved: {
-                pageStack.layers.pop();
-                if(root.loadedCalendar && (root.loadedCalendar.name === root.calendarName)) {
-                    root.loadedCalendar.ownerName = ownerName;
-                    root.loadedCalendar.ownerEmail = ownerEmail;
-                }
-            }
-        }
-    }
 }

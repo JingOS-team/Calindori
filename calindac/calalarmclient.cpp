@@ -39,11 +39,16 @@ CalAlarmClient::CalAlarmClient(QObject *parent)
     saveSuspendSeconds();
     checkAlarms();
 
-    connect(m_notification_handler, &NotificationHandler::scheduleAlarmCheck, this, &CalAlarmClient::scheduleAlarmCheck);
-    connect(&m_check_timer, &QTimer::timeout, this, &CalAlarmClient::checkAlarms);
-    connect(m_wakeup_manager, &WakeupManager::wakeupAlarmClient, this, &CalAlarmClient::wakeupCallback);
-    connect(m_wakeup_manager, &WakeupManager::activeChanged, this, &CalAlarmClient::setupShceduler);
-    setupShceduler((m_wakeup_manager != nullptr) && (m_wakeup_manager->active()));
+    if ((m_wakeup_manager != nullptr) && (m_wakeup_manager->active())) {
+        qDebug() << "CalAlarmClient: wake up manager offers an active backend with wakeup features";
+        connect(m_wakeup_manager, &WakeupManager::wakeupAlarmClient, this, &CalAlarmClient::wakeupCallback);
+        connect(m_notification_handler, &NotificationHandler::scheduleAlarmCheck, this, &CalAlarmClient::scheduleAlarmCheck);
+        scheduleAlarmCheck();
+    } else {
+        qDebug() << "CalAlarmClient: No wakeup backend active, alarms will be checked with a timer";
+        connect(&m_check_timer, &QTimer::timeout, this, &CalAlarmClient::checkAlarms);
+        m_check_timer.start(1000 * m_check_interval);
+    }
 }
 
 CalAlarmClient::~CalAlarmClient() = default;
@@ -84,7 +89,7 @@ void CalAlarmClient::checkAlarms()
 
     qDebug() << "\ncheckAlarms:Check:" << checkFrom.toString() << " -" << m_last_check.toString();
 
-    FilterPeriod fPeriod { .from = checkFrom, .to = m_last_check };
+    FilterPeriod fPeriod { .from =  checkFrom, .to = m_last_check };
     m_alarms_model->setCalendarFiles(calendarFileList());
     m_alarms_model->setPeriod(fPeriod);
     m_notification_handler->setPeriod(fPeriod);
@@ -146,11 +151,11 @@ QString CalAlarmClient::dumpLastCheck() const
 QStringList CalAlarmClient::dumpAlarms() const
 {
     const auto start = QDateTime(QDate::currentDate(), QTime(0, 0), Qt::LocalTime);
-    const auto end = start.date().endOfDay();
+    const auto end = start.addDays(1).addSecs(-1);
 
     AlarmsModel model {};
     model.setCalendarFiles(calendarFileList());
-    model.setPeriod({.from =  start, .to = end});
+    model.setPeriod({ .from =  start, .to = end});
 
     auto lst = QStringList();
     const auto alarms = model.alarms();
@@ -229,16 +234,9 @@ void CalAlarmClient::scheduleAlarmCheck()
 
     AlarmsModel model {};
     model.setCalendarFiles(calendarFileList());
-
-    model.setPeriod({.from = m_last_check.addSecs(1), .to = (m_last_check.addDays(1)).date().startOfDay()});
+    model.setPeriod({ .from =  m_last_check.addSecs(1), .to = m_last_check.addDays(1) });
 
     auto wakeupAt = model.firstAlarmTime();
-
-    //Recurring events return the date of their first instance; shift them to the present
-    if (wakeupAt.date() < m_last_check.date()) {
-        wakeupAt.setDate(m_last_check.date());
-    }
-
     auto suspendedWakeupAt = m_notification_handler->firstSuspendedBefore(wakeupAt);
 
     if (suspendedWakeupAt.isValid() && suspendedWakeupAt < wakeupAt) {
@@ -247,7 +245,7 @@ void CalAlarmClient::scheduleAlarmCheck()
 
     qDebug() << "scheduleAlarmCheck:" << "Shecdule next alarm check at" << wakeupAt.toString("dd.MM.yyyy hh:mm:ss");
 
-    m_wakeup_manager->scheduleWakeup(wakeupAt);
+    m_wakeup_manager->scheduleWakeup(wakeupAt.addSecs(1));
 }
 
 void CalAlarmClient::wakeupCallback()
@@ -256,20 +254,4 @@ void CalAlarmClient::wakeupCallback()
 
     checkAlarms();
     scheduleAlarmCheck();
-}
-
-void CalAlarmClient::setupShceduler(const bool wakeupManagerActive)
-{
-    if (wakeupManagerActive && m_wakeup_manager->hasWakeupFeatures()) {
-        qDebug() << "setupShceduler: wake up manager offers an active backend with wakeup features";
-        if (m_check_timer.isActive()) {
-            m_check_timer.stop();
-        }
-        scheduleAlarmCheck();
-    } else {
-        qDebug() << "setupShceduler: No wakeup backend, alarms will be checked by a timer";
-        if (!m_check_timer.isActive()) {
-            m_check_timer.start(1000 * m_check_interval);
-        }
-    }
 }

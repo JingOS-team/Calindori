@@ -13,61 +13,31 @@ Kirigami.OverlaySheet {
     id: datePickerSheet
 
     property alias selectedDate: calendarMonth.selectedDate
+    property alias selectedHour: calendarMonth.selectorHour
+    property alias selectedMinutes: calendarMonth.selectorMinutes
     property string headerText
+    property var calendarMonth
+    property var selectedHour
+    property var selectedMinutes
 
     signal datePicked
+    signal timePicked
 
 
-    header: Kirigami.Heading {
-        level:1
-        text: datePickerSheet.headerText
+    function initWidgetState(){
+        calendarMonth.initWidgetState()
     }
 
     ColumnLayout {
-        Layout.preferredWidth: calendarMonth.dayRectWidth * 8
-
+        Layout.preferredWidth: childrenRect.width + datePickerSheet.rightPadding + datePickerSheet.leftPadding
         PickerMonthView {
             id: calendarMonth
+            selectorHour : selectedHour
+            selectorMinutes : selectedMinutes
 
-            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignHCenter
         }
 
-        RowLayout {
-            spacing: Kirigami.Units.largeSpacing
-            Layout.alignment : Qt.AlignHCenter
-
-            RowLayout {
-                spacing: 0
-
-                Controls2.ToolButton {
-                    icon.name: "go-previous"
-
-                    onClicked: calendarMonth.previousMonth()
-                }
-
-                Controls2.ToolButton {
-                    text: "Previous"
-
-                    onClicked: calendarMonth.previousMonth()
-                }
-            }
-
-            RowLayout {
-                spacing: 0
-
-                Controls2.ToolButton {
-                    text: "Next"
-
-                    onClicked: calendarMonth.nextMonth()
-                }
-
-                Controls2.ToolButton {
-                    icon.name: "go-next"
-
-                    onClicked: calendarMonth.nextMonth()
-                }
-            }
-        }
     }
 
     footer: RowLayout {
@@ -80,11 +50,18 @@ Kirigami.OverlaySheet {
             text: "OK"
 
             onClicked: {
-                datePickerSheet.datePicked();
-                datePickerSheet.close();
+                if(calendarMonth.isWheelViewShowing){
+                    calendarMonth.initWidgetState()
+                    calendarMonth.setSelectDate()
+                }else{
+                    calendarMonth.setSelectTime()
+                    datePickerSheet.datePicked();
+                    datePickerSheet.timePicked();
+                    datePickerSheet.close();
+                }
+
             }
         }
-
         Controls2.ToolButton {
             text: "Cancel"
 
