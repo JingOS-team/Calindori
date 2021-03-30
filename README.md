@@ -2,7 +2,7 @@
     SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
     SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Calendar< img src="./icons/calendar_new.svg"/>
+# Calendar<img src="./icons/calendar_new.svg"/>
 
 Calendar application for JingOS.
 
