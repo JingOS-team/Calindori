@@ -19,30 +19,33 @@ Item {
     property var currenSelectedUid
     property var currentDtstart
     property var currentListItem
+    property var currentIndex
     property bool isPressedState: false
 
     signal deleteClicked
 
     function positionListViewFromDate(d) {
         var index = incidenceModel.getIndexFromIncidence(d)
-
+        currentListItem = control.itemAtIndex(index)
         if (index !== -1) {
-            anim.running = false
-            control.positionViewAtIndex(index, ListView.Beginning)
-
-            anim.running = true
             control.positionViewAtIndex(index, ListView.Beginning)
         }
+    }
+
+    function showAddAnim(currentUid){
+        var index = incidenceModel.getIndexFromUuid(currentUid)
+        if (index !== -1) {
+            control.positionViewAtIndex(index, ListView.Beginning)
+        }
+
+        currentListItem = control.itemAtIndex(index)
+        parallelAdd.running = true
     }
 
     function positionListViewFromMonth(d) {
         var index = incidenceModel.getIndexFromMonth(d)
 
         if (index !== -1) {
-            anim.running = false
-            control.positionViewAtIndex(index, ListView.Beginning)
-
-            anim.running = true
             control.positionViewAtIndex(index, ListView.Beginning)
         }
     }
@@ -60,9 +63,10 @@ Item {
     function setCurrentListViewIndex(index) {
         if (index === -1) {
             isPressedState = false
-            currentListItem.color = "transparent"
+            if(currentListItem){
+                currentListItem.color = "transparent"
+            }
         }
-
         control.currentIndex = index
     }
 
@@ -79,27 +83,65 @@ Item {
         anchors.fill: parent
 
         visible: !control.visible
-
-        Image {
-            id: noEventImage
-
+        
+        Item {
             anchors.centerIn: parent
+            width:childrenRect.width
+            height:childrenRect.height
 
-            sourceSize.width: root.width / 4.85
-            sourceSize.height: root.width / 4.85
+            Image {
+                id: noEventImage
+                anchors{
+                    top:parent.top
+                    horizontalCenter: parent.horizontalCenter
+                }
 
-            source: "qrc:/assets/none-event.png"
-        }
+                sourceSize.width: root.width / 4.85
+                sourceSize.height: root.width / 4.85
 
-        Kirigami.Label {
-            anchors {
-                top: noEventImage.bottom
-                horizontalCenter: parent.horizontalCenter
-                topMargin: noEventImage.height / 4
+                source: "qrc:/assets/none-event.png"
             }
 
-            text: "There is no schedule at present"
-            font.pointSize: theme.defaultFont.pointSize
+            Kirigami.Label {
+                anchors {
+                    top: noEventImage.bottom
+                    horizontalCenter: parent.horizontalCenter
+                    topMargin: noEventImage.height / 4
+                }
+
+                width: root.width / 2
+                wrapMode: Text.WordWrap
+                horizontalAlignment: TextInput.AlignHCenter
+                text: "There is no schedule at present"
+                font.pixelSize: 14
+                color: "#4D3C3C43"
+            }
+        }
+    }
+
+    ParallelAnimation{
+        id:parallelAdd
+        
+        running:false
+        NumberAnimation { target: currentListItem; property: "x"; from: currentListItem.x + currentListItem.width; to: currentListItem.x; duration: 200 }
+        NumberAnimation { target: currentListItem; property: "opacity";from: 0; to: 1; duration: 200}
+    }
+
+    ParallelAnimation{
+        id:parallelDelete
+
+        running:false
+        NumberAnimation { target: currentListItem; property: "x"; from: currentListItem.x; to: currentListItem.x + currentListItem.width; duration: 200 }
+        NumberAnimation { target: currentListItem; property: "opacity";from: 1; to: 0; duration: 200}
+
+        onFinished:{
+            currentListItem.color = "transparent"
+            var vevent = {
+                "uid": currenSelectedUid
+            }
+            _eventController.remove(localCalendar, vevent)
+            control.positionViewAtIndex(currentIndex, ListView.Beginning)
+            setCurrentListViewIndex(-1)
         }
     }
 
@@ -109,23 +151,16 @@ Item {
         anchors {
             fill: parent
             margins: root.width / 19.3
-            topMargin: root.width / 10
+            topMargin: root.width / 10 + 5
         }
 
-        visible: control.count !== 0
         model: incidenceModel
+
         clip: true
         focus: true
+        spacing: 5
         highlightFollowsCurrentItem: true
-
-        NumberAnimation {
-            id: anim
-            target: control
-            property: "opacity"
-            from: 0
-            to: 1
-            duration: 300
-        }
+        visible: control.count !== 0
 
         Component.onCompleted: {
             control.currentIndex = -1
@@ -135,15 +170,15 @@ Item {
             id: listItem
 
             width: ListView.view.width
-            height: childrenRect.height
+            height: columnLayout.height + 15
 
             color: ListView.isCurrentItem ? "#1e767680" : "transparent"
-            radius: 15
+            radius: 10
 
             Component.onCompleted: {
                 var displayText = incidenceAlarmsModel ? incidenceAlarmsModel.displayText(
                                                              0) : "-"
-                incidenceAlarmsLabel.text = displayText
+                incidenceAlarmsLabel.text = i18n(displayText)
             }
 
             Calindori.IncidenceAlarmsModel {
@@ -163,28 +198,45 @@ Item {
                 hoverEnabled: true
 
                 onEntered: {
+                    control.focus = true
+                    control.forceActiveFocus()
                     if (!isPressedState)
-                        listItem.color = "#0D000000"
+                         listItem.color = "#0D000000"
                 }
 
                 onExited: {
+                    control.focus = false
                     if (!isPressedState)
-                        listItem.color = (control.currentIndex
-                                          == index) ? "#1e767680" : "transparent"
+                         listItem.color = (control.currentIndex
+                                           == index) ? "#1e767680" : "transparent"
+                }
+
+                onCanceled: {
+                     if (!isPressedState)
+                         listItem.color = (control.currentIndex
+                                           == index) ? "#1e767680" : "transparent"
                 }
 
                 onClicked: {
                     if (mouse.button == Qt.LeftButton) {
+                        listItem.color = "#1e767680";
                         isPressedState = true
                         currentListItem = listItem
+                        currentIndex = index
                         control.currentIndex = index
                         currenSelectedUid = model.uid
                         currentDtstart = model.dtstart
+                        var jx = mapToItem(rowMain,scheduleLable.x,(scheduleLable.y + scheduleLable.height) / 2)
+                        if(jx.y < 80 * appScale){
+                            jx = mapToItem(rowMain,scheduleLable.x,(scheduleLable.y + listItem.height / 2) - 20)
+                        }
                         rowMain.scheduleListViewClicked(model,
-                                                        incidenceAlarmsModel)
+                                                        incidenceAlarmsModel,jx)
                     } else if (mouse.button == Qt.RightButton) {
+                        listItem.color = "#1e767680";
                         isPressedState = true
                         currentListItem = listItem
+                        currentIndex = index
                         control.currentIndex = index
                         currenSelectedUid = model.uid
                         currentDtstart = model.dtstart
@@ -211,19 +263,22 @@ Item {
                 anchors.topMargin: root.width / 25
 
                 width: root.width / 1.11
+                height: control.width / 3.3 
 
-                spacing: 15
+                spacing:3
 
                 RowLayout {
-
+                    
+                    anchors.top: parent.top
                     anchors.left: parent.left
-                    anchors.leftMargin: root.width / 22
+                    anchors.leftMargin: 10
+
                     Layout.preferredWidth: parent.width
-                    Layout.preferredHeight: scheduleLable.height
                     Layout.fillWidth: true
+                    height:scheduleLable.height
 
                     Kirigami.Separator {
-                        Layout.preferredWidth: 6
+                        Layout.preferredWidth: 3
                         Layout.preferredHeight: scheduleLable.height
 
                         color: "#E95B4E"
@@ -234,33 +289,38 @@ Item {
                         id: scheduleLable
 
                         anchors.left: parent.left
-                        anchors.leftMargin: root.width / 32
+                        anchors.leftMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
+
                         Layout.preferredWidth: root.width / 1.28
 
                         text: model && model.summary
-                        font.pointSize: theme.defaultFont.pointSize + 2
-                        wrapMode: Text.WrapAnywhere
+                        font.pixelSize: 14
+                        wrapMode: Text.Wrap
                         color: "black"
                     }
                 }
 
                 RowLayout {
+
                     anchors.left: parent.left
                     anchors.leftMargin: root.width / 12
 
                     Layout.fillWidth: true
-
+                    height:root.width / 18.125
+                    
                     Image {
-                        width: root.width / 24.17
-                        height: width
+                        sourceSize.width: root.width / 18.125
+                        sourceSize.height: root.width / 18.125
                         source: "qrc:/assets/edit_event_summary.png"
                     }
 
                     Kirigami.Label {
+                        id: startLable
+
                         text: "%1 %2".arg(model.displayStartDate).arg(
                                   model.displayStartTime)
-                        font.pointSize: theme.defaultFont.pointSize - 3
+                        font.pixelSize: 11
                         opacity: 0.6
                     }
                 }
@@ -270,10 +330,11 @@ Item {
                     anchors.leftMargin: root.width / 12
 
                     Layout.fillWidth: true
+                    height:root.width / 18.125
 
                     Image {
-                        width: root.width / 18.125
-                        height: width
+                        sourceSize.width: root.width / 18.125
+                        sourceSize.height: root.width / 18.125
 
                         source: "qrc:/assets/event_alarm.png"
                     }
@@ -281,13 +342,13 @@ Item {
                     Kirigami.Label {
                         id: incidenceAlarmsLabel
 
-                        font.pointSize: theme.defaultFont.pointSize - 3
+                        font.pixelSize: 11
                         opacity: 0.6
                     }
                 }
 
                 Item {
-                    height: 6
+                    height: 6 * appScale
                     Layout.fillWidth: true
                 }
             }
@@ -301,16 +362,17 @@ Item {
             delegate: Item {
                 Layout.fillWidth: true
 
-                height: 80
+                height: 62 * appScale
 
                 Text {
                     anchors.left: parent.left
                     anchors.leftMargin: root.width / 32
                     anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 5
 
-                    text: section
+                    text: i18n(section)
                     color: "#E95B4E"
-                    font.pointSize: theme.defaultFont.pointSize + 3
+                    font.pixelSize: 15
                     font.bold: true
                 }
             }
@@ -339,28 +401,21 @@ Item {
         signal dialogRightClicked
         signal dialogLeftClicked
 
-        title: "Delete"
-        font.pointSize: theme.defaultFont.pointSize
-        text: "Are you sure you want to delete this event?"
-        rightButtonText: qsTr("Delete")
-        leftButtonText: qsTr("Cancel")
+        title: i18n("Delete")
+        font.pixelSize: 14
+        text: i18n("Are you sure you want to delete this event?")
+        rightButtonText: i18n("Delete")
+        leftButtonText: i18n("Cancel")
+        rightButtonTextColor:  "#FF3C4BE8"
         visible: false
         closePolicy: Popup.CloseOnEscape
 
         onRightButtonClicked: {
-            var vevent = {
-                "uid": currenSelectedUid
-            }
-            _eventController.remove(localCalendar, vevent)
-
-            var date = new Date(currentDtstart.getYear(),
-                                currentDtstart.getMonth(), 1,
-                                currentDtstart.getHours(),
-                                currentDtstart.getMinutes())
-            positionListViewFromMonth(date)
-            setCurrentListViewIndex(-1)
+            currentListItem.color = "white"
+            parallelDelete.running = true
 
             deleteDialog.close()
+            
         }
 
         onLeftButtonClicked: {

@@ -15,11 +15,16 @@ Kirigami.ApplicationWindow {
     width: mainWindow.screen.width
     height: mainWindow.screen.height
 
-    fastBlurMode: true
-    fastBlurColor: "#CFFFFFFF"
+    property real appScale: 1.3 * mainWindow.width / 1920
+    //fastBlurMode: true
+    //fastBlurColor: "#CFFFFFFF"
 
     pageStack {
-        initialPage: [calendarMonthPage]
+        initialPage: CalendarMonthPage {
+            calendar: localCalendar
+
+            onPageEnd: switchToMonthPage(lastDate, lastActionIndex)
+        }
         defaultColumnWidth: Kirigami.Units.gridUnit * 60
     }
 
@@ -29,13 +34,4 @@ Kirigami.ApplicationWindow {
         name: _calindoriConfig.activeCalendar
     }
 
-    Component {
-        id: calendarMonthPage
-
-        CalendarMonthPage {
-            calendar: localCalendar
-
-            onPageEnd: switchToMonthPage(lastDate, lastActionIndex)
-        }
-    }
 }

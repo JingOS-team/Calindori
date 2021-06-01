@@ -44,7 +44,6 @@ ColumnLayout {
     }
 
     Controls2.Label {
-
         text: ((root.headerTodosCount > 0) ? i18np("%1 task", "%1 tasks",root.headerTodosCount) : "") +
                 ((root.headerTodosCount > 0 && root.headerEventsCount > 0) ? " and " : "") +
                     ((root.headerEventsCount > 0) ? i18np("%1 event", "%1 events",root.headerEventsCount) : "")

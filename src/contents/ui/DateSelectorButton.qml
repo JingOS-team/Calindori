@@ -39,7 +39,7 @@ Controls2.ToolButton {
         anchors.verticalCenter: parent.verticalCenter
 
         opacity: 0.6
-        font.pointSize: theme.defaultFont.pointSize + 2
+        font.pixelSize: 14
         color: textColor
         text: (selectorDate != undefined && !isNaN(
                    root.selectorDate)) ? selectorDate.toLocaleDateString(

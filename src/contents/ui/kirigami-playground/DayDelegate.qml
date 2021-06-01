@@ -38,7 +38,8 @@ Item {
     property int currentYearNumber: model.yearNumber
 
     signal dayClicked
-    signal monthAndYearChanged
+    signal nextMonthChanged
+    signal previousMonthChanged
 
     width: childrenRect.width
     height: childrenRect.height
@@ -77,8 +78,7 @@ Item {
                                           % 7 === 6 | !isCurrentMonth) ? 0.3 : 1
                 text: model.dayNumber
                 color: highlight ? "white" : (isToday ? "red" : "black")
-                font.pointSize: highlight ? theme.defaultFont.pointSize
-                                            + 14 : theme.defaultFont.pointSize + 9
+                font.pixelSize: highlight ? 22: 19
             }
 
             Rectangle {
@@ -109,20 +109,20 @@ Item {
 
             onWheel: {
                 if (wheel.angleDelta.y >= 100) {
-                    dayDelegate.monthAndYearChanged()
+                    dayDelegate.previousMonthChanged()
                     calendarMonthView.previousMonth()
                 } else if (wheel.angleDelta.y <= -100) {
-                    dayDelegate.monthAndYearChanged()
+                    dayDelegate.nextMonthChanged()
                     calendarMonthView.nextMonth()
                 }
             }
 
             onReleased: {
                 if (mouseY - pos1 > 100) {
-                    dayDelegate.monthAndYearChanged()
+                    dayDelegate.previousMonthChanged()
                     calendarMonthView.previousMonth()
                 } else if (mouseY - pos1 < -100) {
-                    dayDelegate.monthAndYearChanged()
+                    dayDelegate.nextMonthChanged()
                     calendarMonthView.nextMonth()
                 } else {
                     if (isCurrentMonth)
@@ -130,5 +130,9 @@ Item {
                 }
             }
         }
+
+       
+    
     }
+    
 }

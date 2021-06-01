@@ -31,7 +31,7 @@ Controls2.ToolButton {
         anchors.right: parent.right
 
         opacity: 0.6
-        font.pointSize: theme.defaultFont.pointSize + 2
+        font.pixelSize: 14
         color: textColor
 
         text: {

@@ -206,7 +206,7 @@ QString IncidenceAlarmsModel::displayText(const int idx) const
     int durationValue = -1 * alarm["startOffsetValue"].value<int>();
 
     if (durationValue == 0) {
-        return i18n("At start of event");
+        return i18n("At time of event");
     }
 
     if (durationType == Duration::Type::Days) {

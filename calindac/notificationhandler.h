@@ -1,6 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
- *
+ *                         2021 Wang Rui <wangrui@jingos.com>
+ * 
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -30,7 +31,7 @@ public:
     /**
      * @brief Creates an alarm notification object for the Incidence with \p uid. It sets the text to be displayed according to \p text. It adds this alarm notification to the internal list of active notifications (the list of notifications that should be sent at the next check).
      */
-    void addActiveNotification(const QString &uid, const QString &text);
+    void addActiveNotification(const QString &uid, const QString &title, const QString &text);
 
     /**
      * @brief  Creates an alarm notification object for the Incidence with \p uid. It sets the text to be displayed according to \p text. It adds this alarm notification to the internal list of suspended notifications.

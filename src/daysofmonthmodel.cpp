@@ -32,6 +32,7 @@ void DaysOfMonthModel::update()
 
     int daysThusFar = daysBeforeCurrentMonth + firstDay.daysInMonth();
 
+    
     if (daysThusFar < totalDays) {
         daysAfterCurrentMonth = totalDays - daysThusFar;
     }
@@ -112,7 +113,7 @@ void DaysOfMonthModel::goNextMonth()
     unsigned long lastUint = lastChangedTime.toTime_t();
     lastUint = lastUint*1000+lastChangedTime.time().msec();
 
-    if(nowUint - lastUint <  600 ) {
+    if(nowUint - lastUint <  300 ) {
         return;
     }
 
@@ -140,7 +141,7 @@ void DaysOfMonthModel::goPreviousMonth()
     unsigned long lastUint = lastChangedTime.toTime_t();
     lastUint = lastUint*1000+lastChangedTime.time().msec();
 
-    if(nowUint - lastUint <  600 ) {
+    if(nowUint - lastUint <  300 ) {
         return;
     }
 
