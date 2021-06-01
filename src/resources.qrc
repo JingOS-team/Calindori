@@ -66,5 +66,8 @@
         <file alias="alert_time_selected.png">assets/alert_time_selected.png</file>
         <file alias="edit_delete_black.png">assets/edit_delete_black.png</file>
         <file alias="none-event.png">assets/none-event.png</file>
+        <file alias="icon_clear.png">assets/icon_clear.png</file>
+        <file alias="calendar_switch.png">assets/calendar_switch.png</file>
+        <file alias="today_icon.png">assets/today_icon.png</file>
     </qresource>
 </RCC>

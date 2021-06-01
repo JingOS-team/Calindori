@@ -1,6 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
- *
+ *                         2021 Wang Rui <wangrui@jingos.com>
+ * 
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -19,9 +20,10 @@ NotificationHandler::NotificationHandler(QObject *parent) : QObject(parent), m_a
 
 NotificationHandler::~NotificationHandler() = default;
 
-void NotificationHandler::addActiveNotification(const QString &uid, const QString &text)
+void NotificationHandler::addActiveNotification(const QString &uid, const QString &title, const QString &text)
 {
     AlarmNotification *notification = new AlarmNotification(this, uid);
+    notification->setTitle(title);
     notification->setText(text);
     m_active_notifications[notification->uid()] = notification;
 }

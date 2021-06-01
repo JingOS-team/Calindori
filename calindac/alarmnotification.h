@@ -53,6 +53,8 @@ public:
      */
     void setRemindAt(const QDateTime &remindAtDt);
 
+    void setTitle(const QString &title);
+
 Q_SIGNALS:
 
     /**

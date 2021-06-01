@@ -67,13 +67,15 @@ Rectangle {
         calendarScheduleView.positionListViewFromDate(root.selectedDate)
     }
 
-    function popShowMessage(model, incidenceAlarmsModel) {
-        monthView.popShowMessage(model, incidenceAlarmsModel)
+    function popShowMessage(model, incidenceAlarmsModel,jx) {
+        monthView.popShowMessage(model, incidenceAlarmsModel,jx)
     }
 
-    function notifyCalendarChanged(d) {
+    function notifyCalendarChanged(d,currentUid) {
         mm.update()
-        calendarScheduleView.positionListViewFromDate(d)
+        //calendarScheduleView.positionListViewFromDate(d)
+        calendarScheduleView.showAddAnim(currentUid)
+
     }
 
     DaysOfMonthIncidenceModel {
@@ -82,6 +84,10 @@ Rectangle {
         year: monthView.selectedDate.getFullYear()
         month: monthView.selectedDate.getMonth() + 1
         calendar: cal
+        onMonthChanged:{
+            monthView.monthChanged()
+            
+        }
     }
 
     MonthView {
@@ -92,8 +98,15 @@ Rectangle {
         daysModel: mm
         applicationLocale: _appLocale
         displayedYear: mm.year
-        displayedMonthName: _appLocale.standaloneMonthName(mm.month - 1)
+        displayedMonthName: i18n(_appLocale.standaloneMonthName(mm.month - 1))
         selectedDate: _eventController.localSystemDateTime()
         currentDate: _eventController.localSystemDateTime()
+    }
+
+    DaysOfMonthModel {
+        id: dayOfMonthModel
+
+        year: selectedDate.getFullYear()
+        month: selectedDate.getMonth() + 1
     }
 }

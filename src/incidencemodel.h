@@ -100,9 +100,11 @@ public:
     void setAppLocale(const QLocale &qmlLocale);
 
     Q_INVOKABLE int getIndexFromIncidence(QDateTime date);
+    Q_INVOKABLE int getIndexFromUuid(QString uid);
     Q_INVOKABLE int getIndexFromMonth(QDateTime date);
     Q_INVOKABLE void loadIncidences();
     Q_INVOKABLE QString displayStartDateOfWeek(const int idx) const;
+    Q_INVOKABLE bool is24HourFormat() const;
 
 Q_SIGNALS:
     void filterDtChanged();

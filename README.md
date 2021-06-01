@@ -2,7 +2,7 @@
     SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
     SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Calendar<img src="./icons/calendar_new.svg"/>
+# Calendar< img src="Jcalendar.svg"/>
 
 Calendar application for JingOS.
 
@@ -37,7 +37,11 @@ Calendar application for JingOS.
 
 ## Screenshots
 
-JingOS :
+Calendar:
+
+![](screenshots/calendar_screenshot.png)
+
+JingOS:
 
 ![](./launcher.jpeg)
 
@@ -47,9 +51,9 @@ JingOS :
 
 * Home page: https://www.jingos.com/
 
-* Project page: https://github.com/JingOS-team/jing-calendar/
+* Project page: https://github.com/JingOS-team/calendar
 
-* Issues: https://github.com/JingOS-team/jing-calendar/issues
+* Issues: https://github.com/JingOS-team/calendar/issues
 
 * Development channel: https://forum.jingos.com/
 

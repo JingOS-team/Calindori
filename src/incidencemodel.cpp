@@ -8,6 +8,11 @@
 #include "incidencemodel.h"
 #include <KLocalizedString>
 #include <QDebug>
+#define FORMAT24H "HH:mm:ss"
+#define FORMAT12H "h:mm:ss ap"
+#include <KSharedConfig>
+#include <KConfigGroup>
+#include <QtCore/QDate>
 
 using namespace KCalendarCore;
 
@@ -552,8 +557,8 @@ QString IncidenceModel::displayStartTime(const int idx) const
     if (incidence->allDay()) {
         return i18n("all-day");
     }
-
-    return startDt.isValid() ? m_locale.toString(startDt.time(), "hh:mm") : QString();
+    QString format = is24HourFormat() ? "HH:mm" : "h:mm ap";
+    return startDt.isValid() ? m_locale.toString(startDt.time(), format) : QString();
 }
 
 void IncidenceModel::setAppLocale(const QLocale &qmlLocale)
@@ -617,6 +622,17 @@ int IncidenceModel::getIndexFromIncidence(QDateTime date)
     return index;
 }
 
+int IncidenceModel::getIndexFromUuid(QString uid)
+{
+    for(int i = 0;i < m_incidences.count();i++){
+        auto incidence = m_incidences.at(i);
+            if(incidence->uid() == uid){
+                return i;
+            }
+    }
+    return -1;
+}
+
 int IncidenceModel::getIndexFromMonth(QDateTime date)
 {
     int index =  -1;
@@ -636,4 +652,13 @@ int IncidenceModel::getIndexFromMonth(QDateTime date)
     }
 
     return index;
+}
+
+bool IncidenceModel::is24HourFormat() const
+{
+    KSharedConfig::Ptr  m_localeConfig = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+    KConfigGroup  m_localeSettings = KConfigGroup(m_localeConfig, "Locale");
+
+    QString timeFormat =  m_localeSettings.readEntry("TimeFormat", QStringLiteral(FORMAT24H));
+    return (timeFormat == FORMAT24H) ;
 }

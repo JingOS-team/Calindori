@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Wang Rui <wangrui@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -17,6 +18,7 @@
 #include <QVariantMap>
 #include <QDateTime>
 #include <KLocalizedString>
+#include <QDBusServiceWatcher>
 
 using namespace KCalendarCore;
 
@@ -26,6 +28,9 @@ CalAlarmClient::CalAlarmClient(QObject *parent)
     new CalindacAdaptor(this);
 
     QDBusConnection::sessionBus().registerObject("/calindac", this);
+
+    QDBusServiceWatcher *serviceWatcher = new QDBusServiceWatcher("org.kde.Solid.PowerManagement",QDBusConnection::sessionBus(),QDBusServiceWatcher::WatchModeFlag::WatchForRegistration);
+    connect(serviceWatcher,&QDBusServiceWatcher::serviceRegistered,this,&CalAlarmClient::serviceWatcherFinished);
 
     KConfigGroup generalGroup(KSharedConfig::openConfig(), "General");
     m_check_interval = generalGroup.readEntry("CheckInterval", 45);
@@ -49,6 +54,20 @@ CalAlarmClient::CalAlarmClient(QObject *parent)
         connect(&m_check_timer, &QTimer::timeout, this, &CalAlarmClient::checkAlarms);
         m_check_timer.start(1000 * m_check_interval);
     }
+}
+
+
+void CalAlarmClient::serviceWatcherFinished(const QString &serviceName)
+{
+    m_wakeup_manager->setActive(true);
+    if (m_check_timer.isActive()) {
+        m_check_timer.stop();
+    }
+
+    connect(m_wakeup_manager, &WakeupManager::wakeupAlarmClient, this, &CalAlarmClient::wakeupCallback);
+    connect(m_notification_handler, &NotificationHandler::scheduleAlarmCheck, this, &CalAlarmClient::scheduleAlarmCheck);
+    
+    scheduleAlarmCheck();
 }
 
 CalAlarmClient::~CalAlarmClient() = default;
@@ -98,7 +117,8 @@ void CalAlarmClient::checkAlarms()
     qDebug() << "checkAlarms:Alarms Found: " << alarms.count();
 
     for (const auto &alarm : qAsConst(alarms)) {
-        m_notification_handler->addActiveNotification(alarm->parentUid(), QString("%1\n%2").arg(alarm->time().toString("hh:mm"), alarm->text()));
+        m_notification_handler->addActiveNotification(alarm->parentUid(), alarm->text(),alarm->time().toString("hh:mm"));
+        // m_notification_handler->addActiveNotification(alarm->parentUid(), QString("%1\n%2").arg(alarm->time().toString("hh:mm"), alarm->text()));
     }
     m_notification_handler->sendNotifications();
     saveLastCheckTime();

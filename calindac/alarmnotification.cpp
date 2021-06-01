@@ -41,7 +41,13 @@ QString AlarmNotification::uid() const
 
 QString AlarmNotification::text() const
 {
+    
     return m_notification->text();
+}
+
+void AlarmNotification::setTitle(const QString &title)
+{
+    m_notification->setTitle(title);
 }
 
 void AlarmNotification::setText(const QString &alarmText)

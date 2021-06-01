@@ -1,6 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
- *
+ *                         2021 Wang Rui <wangrui@jingos.com>
+ * 
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -77,5 +78,8 @@ private:
     int m_check_interval;
     int m_suspend_seconds;
     WakeupManager *m_wakeup_manager;
+
+public Q_SLOTS:
+    void serviceWatcherFinished(const QString &serviceName);
 };
 #endif

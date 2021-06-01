@@ -28,9 +28,9 @@ void EventController::remove(LocalCalendar *calendar, const QVariantMap &eventDa
     qDebug() << "Event deleted: " << deleted;
 }
 
-void EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eventData)
+QString EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eventData)
 {
-    qDebug() << "\naddEdit:\tCreating event";
+    qDebug() << "\naddEdit:\tCreating event "<<eventData;
 
     MemoryCalendar::Ptr memoryCalendar = calendar->memorycalendar();
     QDateTime now = QDateTime::currentDateTime();
@@ -40,7 +40,9 @@ void EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eventD
     Event::Ptr event;
     if (uid == "") {
         event = Event::Ptr(new Event());
+        
         event->setUid(summary.at(0) + now.toString("yyyyMMddhhmmsszzz"));
+        
     } else {
         event = memoryCalendar->event(uid);
         event->setUid(uid);
@@ -139,6 +141,7 @@ void EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eventD
     Q_EMIT calendar->eventsChanged();
 
     qDebug() << "addEdit:\tEvent added/updated: " << merged;
+    return  event->uid();
 }
 
 QDateTime EventController::localSystemDateTime() const

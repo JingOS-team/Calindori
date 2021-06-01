@@ -17,7 +17,7 @@ Item {
     property int days: 7
     property int weeks: 6
     property date currentDate: new Date()
-    property int dayRectWidth: (popup.width - popup.commMargin * 2 - 80) / 7
+    property int dayRectWidth: (popup.width - popup.commMargin * 2) / 7
     property date selectedDate: new Date()
     property string displayedMonthName
     property int displayedYear
@@ -42,21 +42,12 @@ Item {
 
             Layout.preferredWidth: parent.width
             anchors.top: parent.top
-            anchors.topMargin: 12
-
-            Text {
-                anchors.top: parent.top
-                anchors.left: parent.left
-
-                font.pointSize: theme.defaultFont.pointSize + 2
-                text: "Time"
-                font.bold: true
-            }
+            anchors.topMargin: 12 * appScale
 
             TimeSelectWheelView {
                 id: timeSelectWheelView
 
-                anchors.right: parent.right
+                anchors.left: parent.left
 
                 hourNumber: selectorHour
                 pmSelected: customMonthView.pmSelected
@@ -67,31 +58,26 @@ Item {
 
         ColumnLayout {
             anchors.top: selectedTimeHeading.bottom
-            anchors.topMargin: 25
+            anchors.topMargin: 50 * appScale
 
-            spacing: 20
+            spacing: 20 * appScale
 
             RowLayout {
                 id: selectedDayHeading
 
                 height: popup.width / 14
+                width: dayRectWidth
+                Layout.preferredWidth: parent.width
 
-                RowLayout {
-                    anchors.fill: parent
+                Image {
+                    id:swith_img
 
-                    Text {
-                        visible: showMonthName
-                        font.pointSize: theme.defaultFont.pointSize + 2
-                        text: displayedMonthName
-                        font.bold: true
-                    }
+                    sourceSize.width: 22
+                    sourceSize.height: 22
 
-                    Text {
-                        visible: showYear
-                        font.pointSize: theme.defaultFont.pointSize + 2
-                        text: displayedYear
-                        font.bold: true
-                    }
+                    Layout.alignment: Qt.AlignLeft
+                    
+                    source: isWheelViewShowing ? "qrc:/assets/calendar_selected.png" : "qrc:/assets/calendar_switch.png"
 
                     MouseArea {
                         anchors.fill: parent
@@ -106,19 +92,42 @@ Item {
                     }
                 }
 
-                Image {
-                    sourceSize.width: popup.width / 19.735
-                    sourceSize.height: popup.width / 19.735
+                RowLayout {
+                    anchors{
+                        left:swith_img.right
+                        right:rowMonthChange.left
+                    }
 
-                    source: isWheelViewShowing ? "qrc:/assets/calendar_selected.png" : "qrc:/assets/calendar_normal.png"
-                    MouseArea {
-                        anchors.fill: parent
+                    Layout.alignment: Qt.AlignHCenter
 
-                        onClicked: {
-                            if (isWheelViewShowing) {
-                                initWidgetState()
-                            } else {
-                                setWheelViewVisible()
+                    RowLayout{
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        spacing: 5 * appScale
+
+                        Text {
+                            visible: showMonthName
+                            font.pixelSize: 14
+                            text: i18n(displayedMonthName)
+                            font.bold: true
+                        }
+
+                        Text {
+                            visible: showYear
+                            font.pixelSize: 14
+                            text: displayedYear
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+
+                            onClicked: {
+                                if (isWheelViewShowing) {
+                                    initWidgetState()
+                                } else {
+                                    setWheelViewVisible()
+                                }
                             }
                         }
                     }
@@ -126,6 +135,8 @@ Item {
 
                 RowLayout {
                     id: rowMonthChange
+
+                    Layout.alignment: Qt.AlignRight
 
                     Image {
                         sourceSize.width: popup.width / 14
@@ -171,25 +182,24 @@ Item {
 
                         width: customMonthView.dayRectWidth - 10
 
-                        opacity: 0.5
-
                         Controls2.Label {
                             id: weekLabel
 
                             anchors.centerIn: parent
 
-                            color: Kirigami.Theme.textColor
-                            text: customMonthView.applicationLocale.dayName(
+                            color: "#4D000000"
+                            text: i18n(customMonthView.applicationLocale.dayName(
                                       ((model.index
                                         + customMonthView.applicationLocale.firstDayOfWeek)
                                        % customMonthView.days),
-                                      Locale.ShortFormat).substring(0, 1)
-                            font.pointSize: theme.defaultFont.pointSize - 3
+                                      Locale.ShortFormat))
+                            font.pixelSize: 11
+                            
                         }
                     }
                 }
             }
-
+        
             Grid {
                 id: grid
 
@@ -225,31 +235,23 @@ Item {
                                                      root.selectedDate.getMinutes(), 0)
                         }
                     }
-                }
+                }  
             }
 
             DateSelectWheelView {
                 id: dateSelectWheelView
-
+                
                 visible: isWheelViewShowing
                 monthNumber: mm.month - 1
                 yearNumber: mm.year
             }
 
             Rectangle {
+                anchors.top: grid.bottom
                 Layout.fillWidth: true
 
                 height: popup.width / 16
-
-                Kirigami.Separator {
-                    anchors.bottomMargin: 25
-                    anchors.bottom: parent.bottom
-
-                    width: parent.width
-
-                    color: "#767680"
-                    opacity: 0.12
-                }
+                color:"transparent"
             }
         }
     }

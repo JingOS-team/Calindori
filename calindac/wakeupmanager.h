@@ -31,6 +31,7 @@ public:
      * @return True if there is a backend that offers wake-up features
      */
     bool active() const;
+    void setActive(const bool activeBackend);
 
 Q_SIGNALS:
     /**
@@ -59,7 +60,6 @@ public Q_SLOTS:
 
 private:
     void checkBackend();
-    void setActive(const bool activeBackend);
 
     WakeupBackend *m_wakeup_backend;
     int m_cookie;

@@ -19,9 +19,15 @@ Menu {
     property int selectIndex
     property int blurX
     property int blurY
-
+    
     signal deleteClicked
     signal menuClosed(bool deleteClick)
+
+    modal: true
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    Overlay.modal:  Rectangle{
+        color:"transparent"
+    }
 
     delegate: MenuItem {
         id: menuItem
@@ -50,8 +56,8 @@ Menu {
                 verticalAlignment: Text.AlignVCenter
 
                 text: menuItem.text
-                font.pixelSize: parent.height / 3
-                font.pointSize: theme.defaultFont.pointSize + 2
+                font.pixelSize: 14
+                
                 color: menuItem.highlighted ? "#000000" : "#000000"
                 elide: Text.ElideRight
             }
@@ -65,8 +71,8 @@ Menu {
                     verticalCenter: parent.verticalCenter
                 }
 
-                sourceSize.width: mheight / 2.8
-                sourceSize.height: mheight / 2.8
+                width: mheight / 2.8
+                height: mheight / 2.8
 
                 source: "qrc:/assets/edit_delete_black.png"
             }
@@ -116,7 +122,7 @@ Menu {
     }
 
     Action {
-        text: qsTr("Delete")
+        text: i18n("Delete")
         checkable: true
         checked: false
 

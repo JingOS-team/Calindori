@@ -11,15 +11,16 @@ PathView {
 
     property bool starIndexZero: true
     property bool bgShow
-    property variant value
-    property int displayFontSize: width / 4
+    property int value
+    property int displayFontSize: 20
     property real displayStep: 0.6
-    signal viewMove(var index)
 
     width: 100
     height: 300
     preferredHighlightBegin: 0.5
     preferredHighlightEnd: 0.5
+
+    signal viewMove(var index)
 
     focus: true
     clip: true
@@ -55,15 +56,13 @@ PathView {
         Text {
             anchors.centerIn: parent
 
-            font.pointSize: displayFontSize * Number(
-                                delegate.PathView.textFontPercent)
+            font.pixelSize: displayFontSize
             text: modelData.display
             opacity: currentIndex == index ? 1 : 0.3
         }
     }
 
     path: Path {
-
         startX: root.width / 2
         startY: 0
 
@@ -111,11 +110,10 @@ PathView {
         anchors.centerIn: parent
 
         width: parent.width
-        height: 80
+        height:  root.height / pathItemCount + 6 * appScale
 
         visible: bgShow
-        color: "#E5E5EA"
-        opacity: 0.12
-        radius: 14
+        color: "#1F767680"
+        radius: 7 * appScale
     }
 }

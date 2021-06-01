@@ -30,10 +30,12 @@ Item {
     height: childrenRect.height
 
     Item {
+        id: cell
+
         width: dayDelegate.delegateWidth
         height: dayDelegate.delegateWidth / 1.25
 
-        Controls2.ToolButton {
+        Item {
             id: dayButton
 
             anchors.fill: parent
@@ -44,11 +46,11 @@ Item {
                 anchors.top: parent.top
 
                 width: dayDelegate.width / 1.3
-                height: dayDelegate.width / 1.3 - 3
+                height: dayDelegate.width / 1.3
 
                 visible: isCurrentMonth && highlight ? true : false
                 color: "#E95B4E"
-                radius: 12
+                radius: 9
             }
 
             Text {
@@ -59,10 +61,14 @@ Item {
                 visible: isCurrentMonth
                 text: model.dayNumber
                 color: highlight ? "white" : (isToday ? "red" : "black")
-                font.pointSize: theme.defaultFont.pointSize + 2
+                font.pixelSize: 14
             }
 
-            onClicked: dayDelegate.dayClicked()
+            MouseArea {
+                anchors.fill: parent
+
+                onClicked: dayDelegate.dayClicked()
+            }
         }
 
         WheelHandler {
@@ -70,20 +76,37 @@ Item {
             enabled: true
             orientation: Qt.Horizontal
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            property var contentX: 0
+            property bool isReduce: false
 
             onActiveChanged: {
+                popup.isTimeDataChanged = true
                 dayDelegate.isWheeling = active
             }
 
             onWheel: {
-                if (dayDelegate.isWheeling) {
-                    if (event.angleDelta.x > 120) {
-                        mm.goNextMonth()
+                var wX = event.angleDelta.x
+                if (wX != 0 & Math.abs(contentX) < Math.abs(wX)) {
+                    contentX = wX
+                } else if (wX != 0 & Math.abs(contentX) > Math.abs(wX)) {
+                    isReduce = true
+                }
+                if (isReduce & wX == 0) {
+                    if (contentX != 0) {
+                        var count = parseInt(contentX / 250)
+                        if (Math.abs(contentX) < 300) {
+                            count = 1
+                        }
+                        isReduce = false
+                        contentX = 0
 
-                        dayDelegate.isWheeling = false
-                    } else if (event.angleDelta.x < -120) {
-                        mm.goPreviousMonth()
-                        dayDelegate.isWheeling = false
+                        if (count >= 1) {
+                            mm.goNextMonth()
+                            dayDelegate.isWheeling = false
+                        } else if (count <= -1) {
+                            mm.goPreviousMonth()
+                            dayDelegate.isWheeling = false
+                        }
                     }
                 }
             }
@@ -92,13 +115,28 @@ Item {
         MouseArea {
             property int validDistance: 120
             property bool isAdd: false
+            property var contentY: 0
+            property bool isReduce: false
 
             anchors.fill: parent
 
             hoverEnabled: true
+            propagateComposedEvents: true
 
             onPressed: {
+                popup.isTimeDataChanged = true
                 pos1 = mouseX
+            }
+
+            onEntered: {
+                cell.focus = true
+                cell.forceActiveFocus()
+                preventStealing = true
+            }
+
+            onExited: {
+                cell.focus = false
+                preventStealing = false
             }
 
             onReleased: {
@@ -116,6 +154,18 @@ Item {
                     if (isCurrentMonth)
                         dayDelegate.dayClicked()
                 }
+            }
+        }
+
+        Keys.onPressed: {
+            if (event.key == Qt.Key_Left) {
+                popup.isTimeDataChanged = true
+                mm.goPreviousMonth()
+                event.accepted = true
+            } else if (event.key == Qt.Key_Right) {
+                popup.isTimeDataChanged = true
+                mm.goNextMonth()
+                event.accepted = true
             }
         }
     }
