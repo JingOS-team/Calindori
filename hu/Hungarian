@@ -1,47 +1,76 @@
-# SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
-#
-# SPDX-License-Identifier: BSD-2-Clause
+/*
+ * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
 
-add_definitions(-DTRANSLATION_DOMAIN=\"calindac\")
+#ifndef ALARMNOTIFICATION_H
+#define ALARMNOTIFICATION_H
 
-set(calindac_SRCS
-    calalarmclient.cpp
-    calindacmain.cpp
-    alarmsmodel.cpp
-    alarmnotification.cpp
-    notificationhandler.cpp
-    solidwakeupbackend.cpp
-    wakeupmanager.cpp
-    )
+#include <KNotification>
+#include <QDateTime>
 
-qt5_add_dbus_adaptor(calindac_SRCS org.kde.calindac.xml calalarmclient.h CalAlarmClient)
-qt5_add_dbus_adaptor(calindac_SRCS org.kde.wakeupmanager.PowerManagement.xml wakeupmanager.h WakeupManager)
+class NotificationHandler;
 
-add_executable(calindac ${calindac_SRCS} ${RESOURCES})
+/**
+ * @brief The alarm notification that should be displayed. It is a wrapper of a KNotification enhanced with alarm properties, like uid and remind time
+ *
+ */
+class AlarmNotification : public QObject
+{
+    Q_OBJECT
+public:
+    explicit AlarmNotification(NotificationHandler *handler, const QString &uid);
+    ~AlarmNotification() override;
 
-target_link_libraries(calindac
-    KF5::CalendarCore
-    KF5::DBusAddons
-    KF5::Notifications
-    KF5::Service
-    KF5::I18n
-    Qt5::DBus
-    )
+    /**
+     * @brief Sends the notification so as to be displayed
+     */
+    void send() const;
 
-install(TARGETS
-    calindac ${KDE_INSTALL_TARGETS_DEFAULT_ARGS}
-    )
+    /**
+     * @return The uid of the Incidence of the alarm of the notification
+     */
+    QString uid() const;
 
-install(FILES
-    org.kde.calindac.desktop
-    DESTINATION ${KDE_INSTALL_AUTOSTARTDIR}
-    )
+    /**
+     * @brief The text of the notification that should be displayed
+     */
+    QString text() const;
 
-install(FILES
-    org.kde.calindac.xml
-    org.kde.wakeupmanager.PowerManagement.xml
-    DESTINATION ${DBUS_INTERFACES_INSTALL_DIR}
-    )
+    /**
+     * @brief Sets the to-be-displayed text of the notification
+     */
+    void setText(const QString &alarmText);
 
-install(FILES calindac.notifyrc DESTINATION ${KNOTIFYRC_INSTALL_DIR})
+    /**
+     * @return In case of a suspended notification, the time that the notification should be displayed. Otherwise, it is empty.
+     */
+    QDateTime remindAt() const;
 
+    /**
+     * @brief Sets the time that should be displayed a suspended notification
+     */
+    void setRemindAt(const QDateTime &remindAtDt);
+
+    void setTitle(const QString &title);
+
+Q_SIGNALS:
+
+    /**
+     * @brief Signal that should be emitted when the user clicks to the Dismiss action button of the KNotification displayed
+     */
+    void dismiss();
+
+    /**
+     * @brief Signal that should be emitted when the user clicks to the Suspend action button of the KNotification displayed
+     */
+    void suspend();
+
+private:
+    KNotification *m_notification;
+    QString m_uid;
+    QDateTime m_remind_at;
+    NotificationHandler *m_notification_handler;
+};
+#endif
