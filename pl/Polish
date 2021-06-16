@@ -4,73 +4,63 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef ALARMNOTIFICATION_H
-#define ALARMNOTIFICATION_H
+#include "alarmnotification.h"
+#include "notificationhandler.h"
+#include <KLocalizedString>
+#include <QDebug>
 
-#include <KNotification>
-#include <QDateTime>
-
-class NotificationHandler;
-
-/**
- * @brief The alarm notification that should be displayed. It is a wrapper of a KNotification enhanced with alarm properties, like uid and remind time
- *
- */
-class AlarmNotification : public QObject
+AlarmNotification::AlarmNotification(NotificationHandler *handler, const QString &uid) : m_uid {uid}, m_remind_at {QDateTime()}, m_notification_handler {handler}
 {
-    Q_OBJECT
-public:
-    explicit AlarmNotification(NotificationHandler *handler, const QString &uid);
-    ~AlarmNotification() override;
+    m_notification = new KNotification("alarm");
+    m_notification->setActions({i18n("Suspend"), i18n("Dismiss")});
 
-    /**
-     * @brief Sends the notification so as to be displayed
-     */
-    void send() const;
+    connect(m_notification, &KNotification::action1Activated, this, &AlarmNotification::suspend);
+    connect(m_notification, &KNotification::action2Activated, this, &AlarmNotification::dismiss);
+    connect(this, &AlarmNotification::suspend, m_notification_handler, [ = ]() {
+        m_notification_handler->suspend(this);
+    });
+    connect(this, &AlarmNotification::dismiss, m_notification_handler, [ = ]() {
+        m_notification_handler->dismiss(this);
+    });
+}
 
-    /**
-     * @return The uid of the Incidence of the alarm of the notification
-     */
-    QString uid() const;
+AlarmNotification::~AlarmNotification()
+{
+    delete m_notification;
+}
 
-    /**
-     * @brief The text of the notification that should be displayed
-     */
-    QString text() const;
+void AlarmNotification::send() const
+{
+    m_notification->sendEvent();
+}
 
-    /**
-     * @brief Sets the to-be-displayed text of the notification
-     */
-    void setText(const QString &alarmText);
+QString AlarmNotification::uid() const
+{
+    return m_uid;
+}
 
-    /**
-     * @return In case of a suspended notification, the time that the notification should be displayed. Otherwise, it is empty.
-     */
-    QDateTime remindAt() const;
+QString AlarmNotification::text() const
+{
+    
+    return m_notification->text();
+}
 
-    /**
-     * @brief Sets the time that should be displayed a suspended notification
-     */
-    void setRemindAt(const QDateTime &remindAtDt);
+void AlarmNotification::setTitle(const QString &title)
+{
+    m_notification->setTitle(title);
+}
 
-    void setTitle(const QString &title);
+void AlarmNotification::setText(const QString &alarmText)
+{
+    m_notification->setText(alarmText);
+}
 
-Q_SIGNALS:
+QDateTime AlarmNotification::remindAt() const
+{
+    return m_remind_at;
+}
 
-    /**
-     * @brief Signal that should be emitted when the user clicks to the Dismiss action button of the KNotification displayed
-     */
-    void dismiss();
-
-    /**
-     * @brief Signal that should be emitted when the user clicks to the Suspend action button of the KNotification displayed
-     */
-    void suspend();
-
-private:
-    KNotification *m_notification;
-    QString m_uid;
-    QDateTime m_remind_at;
-    NotificationHandler *m_notification_handler;
-};
-#endif
+void AlarmNotification::setRemindAt(const QDateTime &remindAtDt)
+{
+    m_remind_at = remindAtDt;
+}
