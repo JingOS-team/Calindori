@@ -1,36 +1,47 @@
-/*
- * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
+# SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+#
+# SPDX-License-Identifier: BSD-2-Clause
 
-#include "solidwakeupbackend.h"
-#include <QDBusInterface>
-#include <QDBusConnection>
-#include <QDBusReply>
-#include <QDebug>
-#include <QDateTime>
+add_definitions(-DTRANSLATION_DOMAIN=\"calindac\")
 
-SolidWakeupBackend::SolidWakeupBackend(QObject *parent) : WakeupBackend(parent)
-{
-    m_interface = new QDBusInterface(QStringLiteral("org.kde.Solid.PowerManagement"), QStringLiteral("/org/kde/Solid/PowerManagement"), QStringLiteral("org.kde.Solid.PowerManagement"), QDBusConnection::sessionBus(), this);
-}
+set(calindac_SRCS
+    calalarmclient.cpp
+    calindacmain.cpp
+    alarmsmodel.cpp
+    alarmnotification.cpp
+    notificationhandler.cpp
+    solidwakeupbackend.cpp
+    wakeupmanager.cpp
+    )
 
-void SolidWakeupBackend::clearWakeup(const QVariant &scheduledWakeup)
-{
-    m_interface->call(QStringLiteral("clearWakeup"), scheduledWakeup.toInt());
-}
+qt5_add_dbus_adaptor(calindac_SRCS org.kde.calindac.xml calalarmclient.h CalAlarmClient)
+qt5_add_dbus_adaptor(calindac_SRCS org.kde.wakeupmanager.PowerManagement.xml wakeupmanager.h WakeupManager)
 
-QVariant SolidWakeupBackend::scheduleWakeup(const QVariantMap &callbackInfo, const quint64 wakeupAt)
-{
-    auto scheduledAt = QDateTime::fromSecsSinceEpoch(wakeupAt);
+add_executable(calindac ${calindac_SRCS} ${RESOURCES})
 
-    qDebug() << "SolidWakeupBackend::scheduleWakeup at" << scheduledAt.toString("dd.MM.yyyy hh:mm:ss") << "tz " << scheduledAt.timeZoneAbbreviation() << " epoch" << wakeupAt;
+target_link_libraries(calindac
+    KF5::CalendarCore
+    KF5::DBusAddons
+    KF5::Notifications
+    KF5::Service
+    KF5::I18n
+    Qt5::DBus
+    )
 
-    if (m_interface->isValid()) {
-        QDBusReply<uint> reply = m_interface->call(QStringLiteral("scheduleWakeup"), callbackInfo["dbus-service"].toString(), QDBusObjectPath(callbackInfo["dbus-path"].toString()), wakeupAt);
-        return reply.value();
-    }
+install(TARGETS
+    calindac ${KDE_INSTALL_TARGETS_DEFAULT_ARGS}
+    )
 
-    return 0;
-}
+install(FILES
+    org.kde.calindac.desktop
+    DESTINATION ${KDE_INSTALL_AUTOSTARTDIR}
+    )
+
+install(FILES
+    org.kde.calindac.xml
+    org.kde.wakeupmanager.PowerManagement.xml
+    DESTINATION ${DBUS_INTERFACES_INSTALL_DIR}
+    )
+
+install(FILES calindac.notifyrc DESTINATION ${KNOTIFYRC_INSTALL_DIR})
+
