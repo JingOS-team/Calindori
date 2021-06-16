@@ -1,47 +1,22 @@
-# SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
-#
-# SPDX-License-Identifier: BSD-2-Clause
+Copyright (c) <year> <owner>. All rights reserved.
 
-add_definitions(-DTRANSLATION_DOMAIN=\"calindac\")
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
 
-set(calindac_SRCS
-    calalarmclient.cpp
-    calindacmain.cpp
-    alarmsmodel.cpp
-    alarmnotification.cpp
-    notificationhandler.cpp
-    solidwakeupbackend.cpp
-    wakeupmanager.cpp
-    )
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
 
-qt5_add_dbus_adaptor(calindac_SRCS org.kde.calindac.xml calalarmclient.h CalAlarmClient)
-qt5_add_dbus_adaptor(calindac_SRCS org.kde.wakeupmanager.PowerManagement.xml wakeupmanager.h WakeupManager)
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
 
-add_executable(calindac ${calindac_SRCS} ${RESOURCES})
-
-target_link_libraries(calindac
-    KF5::CalendarCore
-    KF5::DBusAddons
-    KF5::Notifications
-    KF5::Service
-    KF5::I18n
-    Qt5::DBus
-    )
-
-install(TARGETS
-    calindac ${KDE_INSTALL_TARGETS_DEFAULT_ARGS}
-    )
-
-install(FILES
-    org.kde.calindac.desktop
-    DESTINATION ${KDE_INSTALL_AUTOSTARTDIR}
-    )
-
-install(FILES
-    org.kde.calindac.xml
-    org.kde.wakeupmanager.PowerManagement.xml
-    DESTINATION ${DBUS_INTERFACES_INSTALL_DIR}
-    )
-
-install(FILES calindac.notifyrc DESTINATION ${KNOTIFYRC_INSTALL_DIR})
-
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
