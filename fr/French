@@ -1,22 +1,66 @@
-Copyright (c) <year> <owner>. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
 
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+#include "alarmnotification.h"
+#include "notificationhandler.h"
+#include <KLocalizedString>
+#include <QDebug>
 
-1. Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
+AlarmNotification::AlarmNotification(NotificationHandler *handler, const QString &uid) : m_uid {uid}, m_remind_at {QDateTime()}, m_notification_handler {handler}
+{
+    m_notification = new KNotification("alarm");
+    m_notification->setActions({i18n("Suspend"), i18n("Dismiss")});
 
-2. Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
+    connect(m_notification, &KNotification::action1Activated, this, &AlarmNotification::suspend);
+    connect(m_notification, &KNotification::action2Activated, this, &AlarmNotification::dismiss);
+    connect(this, &AlarmNotification::suspend, m_notification_handler, [ = ]() {
+        m_notification_handler->suspend(this);
+    });
+    connect(this, &AlarmNotification::dismiss, m_notification_handler, [ = ]() {
+        m_notification_handler->dismiss(this);
+    });
+}
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+AlarmNotification::~AlarmNotification()
+{
+    delete m_notification;
+}
+
+void AlarmNotification::send() const
+{
+    m_notification->sendEvent();
+}
+
+QString AlarmNotification::uid() const
+{
+    return m_uid;
+}
+
+QString AlarmNotification::text() const
+{
+    
+    return m_notification->text();
+}
+
+void AlarmNotification::setTitle(const QString &title)
+{
+    m_notification->setTitle(title);
+}
+
+void AlarmNotification::setText(const QString &alarmText)
+{
+    m_notification->setText(alarmText);
+}
+
+QDateTime AlarmNotification::remindAt() const
+{
+    return m_remind_at;
+}
+
+void AlarmNotification::setRemindAt(const QDateTime &remindAtDt)
+{
+    m_remind_at = remindAtDt;
+}
