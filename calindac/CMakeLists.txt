@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+#                         2021 Bob <pengbo·wu@jingos.com>
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
@@ -8,6 +9,7 @@ set(calindac_SRCS
     calalarmclient.cpp
     calindacmain.cpp
     alarmsmodel.cpp
+    alarmplayer.cpp
     alarmnotification.cpp
     notificationhandler.cpp
     solidwakeupbackend.cpp
@@ -20,6 +22,7 @@ qt5_add_dbus_adaptor(calindac_SRCS org.kde.wakeupmanager.PowerManagement.xml wak
 add_executable(calindac ${calindac_SRCS} ${RESOURCES})
 
 target_link_libraries(calindac
+    Qt5::Multimedia
     KF5::CalendarCore
     KF5::DBusAddons
     KF5::Notifications

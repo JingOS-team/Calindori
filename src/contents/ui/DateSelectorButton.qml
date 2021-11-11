@@ -25,9 +25,7 @@ Controls2.ToolButton {
     implicitWidth: Kirigami.Units.gridUnit * 5
 
     onClicked: {
-        datePickerSheet.selectedDate
-                = (selectorDate != undefined && !isNaN(
-                       root.selectorDate)) ? selectorDate : _eventController.localSystemDateTime()
+        datePickerSheet.selectedDate = (selectorDate != undefined && !isNaN(root.selectorDate)) ? selectorDate : _eventController.localSystemDateTime()
         datePickerSheet.open()
         datePickerSheet.initWidgetState()
         datePickerSheet.selectedHour = selectorHour
@@ -37,18 +35,38 @@ Controls2.ToolButton {
     Text {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-
         opacity: 0.6
-        font.pixelSize: 14
+        font.pixelSize: 14 * appFontSize
         color: textColor
-        text: (selectorDate != undefined && !isNaN(
-                   root.selectorDate)) ? selectorDate.toLocaleDateString(
-                                             _appLocale, "MMM d,yyyy") : "-"
+        text: {
+            if (selectorDate != undefined && !isNaN(root.selectorDate)) {
+                if (_eventController.getRegionTimeFormat() == true) {
+                    var year = selectorDate.toLocaleDateString(_appLocale, "yyyy")
+                    var mon = selectorDate.toLocaleDateString(_appLocale, "M")
+                    var day = selectorDate.toLocaleDateString(_appLocale, "d")
+                    return year + "年" + mon + "月" + day + "日"
+                } else {
+                    return selectorDate.toLocaleDateString(_appLocale, "MMM d,yyyy")
+                }
+            } else {
+                return "-"
+            }
+        }
         onTextChanged: {
-            var x = (selectorDate != undefined && !isNaN(
-                         root.selectorDate)) ? selectorDate.toLocaleDateString(
-                                                   _appLocale,
-                                                   "MMM d,yyyy") : "-"
+            var x;
+
+            if (selectorDate != undefined && !isNaN(root.selectorDate)) {
+                if(_eventController.getRegionTimeFormat() == true) {
+                    var year = selectorDate.toLocaleDateString(_appLocale, "yyyy")
+                    var mon = selectorDate.toLocaleDateString(_appLocale, "M")
+                    var day = selectorDate.toLocaleDateString(_appLocale, "d")
+                    x = year + "年" + mon + "月" + day + "日"
+                } else {
+                    x = selectorDate.toLocaleDateString(_appLocale, "MMMd,yyyy")
+                }
+            } else {
+                x = "-"
+            }
             var b = x === text
         }
     }

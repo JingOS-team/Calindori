@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ * 		           2021 Bob <pengbo·wu@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -37,6 +38,11 @@ public:
      * @brief The text of the notification that should be displayed
      */
     QString text() const;
+
+    /**
+     * @brief The title of the notification that should be displayed
+     */
+    QString title() const;
 
     /**
      * @brief Sets the to-be-displayed text of the notification

@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Bob <pengbo·wu@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -14,6 +15,7 @@
 int main(int argc, char **argv)
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    KLocalizedString::setApplicationDomain("calindac");
     QApplication app(argc, argv);
     app.setAttribute(Qt::AA_UseHighDpiPixmaps, true);
 

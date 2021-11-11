@@ -26,7 +26,7 @@ Item {
     property int dayRectWidth: calendarMonthView.width / 7
     property date selectedDate: new Date()
     property string displayedMonthName
-    property int displayedYear
+    property var displayedYear
     property var applicationLocale: Qt.locale()
 
     /**
@@ -57,7 +57,19 @@ Item {
     }
 
     Component.onCompleted: {
-        rowMain.dayClickFindIndex(root.selectedDate)
+        //rowMain.dayClickFindIndex(root.selectedDate)
+        timer.running = true
+    }
+
+    Timer {
+        id: timer
+        interval: 100
+        repeat: false
+        running: false
+
+        onTriggered: {
+            rowMain.dayClickFindIndex(root.selectedDate)
+        }
     }
 
     ColumnLayout {
@@ -80,7 +92,7 @@ Item {
             Layout.leftMargin: calendarMonthView.width / 26.8
             Layout.bottomMargin: calendarMonthView.width / 26.8
 
-            yearNumber: daysModel.year
+            yearNumber: displayedYear
         }
 
 
@@ -110,11 +122,11 @@ Item {
 
                         anchors.centerIn: parent
 
-                        color: "black"
-                        text: i18n(root.applicationLocale.dayName(
+                        color: majorForeground
+                        text: root.applicationLocale.dayName(
                                        ((model.index + root.applicationLocale.firstDayOfWeek)
-                                        % root.days), Locale.ShortFormat))
-                        font.pixelSize: 14
+                                        % root.days), Locale.ShortFormat)
+                        font.pixelSize: 14 * appFontSize
                         opacity: model.index % 7 === 0 | model.index % 7 === 6 ? 0.3 : 1
                     }
                 }

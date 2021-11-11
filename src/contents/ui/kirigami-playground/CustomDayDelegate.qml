@@ -24,7 +24,9 @@ Item {
     property int testValue: -1
     property bool isWheeling: false
 
-    signal dayClicked
+    signal dayClicked()
+    signal nextMonth()
+    signal previousMonth()
 
     width: childrenRect.width
     height: childrenRect.height
@@ -50,7 +52,7 @@ Item {
 
                 visible: isCurrentMonth && highlight ? true : false
                 color: "#E95B4E"
-                radius: 9
+                radius: 9 * appScale
             }
 
             Text {
@@ -60,15 +62,15 @@ Item {
 
                 visible: isCurrentMonth
                 text: model.dayNumber
-                color: highlight ? "white" : (isToday ? "red" : "black")
-                font.pixelSize: 14
+                color: highlight ? cardBackground : (isToday ? "red" : majorForeground)
+                font.pixelSize: 14 * appFontSize
             }
 
-            MouseArea {
-                anchors.fill: parent
+            // MouseArea {
+            //     anchors.fill: parent
 
-                onClicked: dayDelegate.dayClicked()
-            }
+            //     onClicked: dayDelegate.dayClicked()
+            // }
         }
 
         WheelHandler {
@@ -101,9 +103,11 @@ Item {
                         contentX = 0
 
                         if (count >= 1) {
+                            dayDelegate.nextMonth()
                             mm.goNextMonth()
                             dayDelegate.isWheeling = false
                         } else if (count <= -1) {
+                            dayDelegate.previousMonth()
                             mm.goPreviousMonth()
                             dayDelegate.isWheeling = false
                         }
@@ -141,15 +145,17 @@ Item {
 
             onReleased: {
                 if (mouseX - pos1 < -50) {
-                    mm.goNextMonth()
-                    root.selectedDate = new Date(mm.year, mm.month - 1, 1,
-                                                 root.selectedDate.getHours(),
-                                                 root.selectedDate.getMinutes())
-                } else if (mouseX - pos1 > 50) {
+                    dayDelegate.previousMonth()
                     mm.goPreviousMonth()
-                    root.selectedDate = new Date(mm.year, mm.month - 1, 1,
-                                                 root.selectedDate.getHours(),
-                                                 root.selectedDate.getMinutes())
+                    // root.selectedDate = new Date(mm.year, mm.month - 1, 1,
+                    //                              root.selectedDate.getHours(),
+                    //                              root.selectedDate.getMinutes())
+                } else if (mouseX - pos1 > 50) {
+                    dayDelegate.nextMonth()
+                    mm.goNextMonth()
+                    // root.selectedDate = new Date(mm.year, mm.month - 1, 1,
+                    //                              root.selectedDate.getHours(),
+                    //                              root.selectedDate.getMinutes())
                 } else {
                     if (isCurrentMonth)
                         dayDelegate.dayClicked()
@@ -160,10 +166,12 @@ Item {
         Keys.onPressed: {
             if (event.key == Qt.Key_Left) {
                 popup.isTimeDataChanged = true
+                dayDelegate.previousMonth()
                 mm.goPreviousMonth()
                 event.accepted = true
             } else if (event.key == Qt.Key_Right) {
                 popup.isTimeDataChanged = true
+                dayDelegate.nextMonth()
                 mm.goNextMonth()
                 event.accepted = true
             }

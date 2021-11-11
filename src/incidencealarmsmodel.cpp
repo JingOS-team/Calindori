@@ -43,7 +43,6 @@ void IncidenceAlarmsModel::removeAll()
 
 void IncidenceAlarmsModel::addAlarm(const int secondsFromStart)
 {
-    qDebug() << "\nAddAlarm:\tAdding alarm. Seconds before start: " << secondsFromStart;
 
     beginInsertRows(QModelIndex(), mAlarms.count(), mAlarms.count());
 
@@ -112,8 +111,6 @@ void IncidenceAlarmsModel::loadPersistentAlarms()
     MemoryCalendar::Ptr memCalendar;
     Incidence::Ptr alarmIncidence;
     Alarm::List persistentAlarms = Alarm::List();
-
-    qDebug() << "\nloadPersistentAlarms: uid" << uid;
 
     if (localCalendar != nullptr) {
         memCalendar = localCalendar->memorycalendar();

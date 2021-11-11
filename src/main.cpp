@@ -24,13 +24,15 @@
 #include "recurrenceperiodmodel.h"
 #include "daysofmonthincidencemodel.h"
 #include "incidencemodel.h"
-
+#include <japplicationqt.h>
 
 Q_DECL_EXPORT int main(int argc, char *argv[])
 {
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
     
+    JApplicationQt japp;
+    japp.enableBackgroud(false);
     KLocalizedString::setApplicationDomain("calendar");
 
     KAboutData aboutData(QStringLiteral("calindori"), i18n("JingOS Calendar"), QStringLiteral("1.2.90"), i18nc("@title", "Calendar application"), KAboutLicense::GPL_V3, i18nc("@info:credit", "(c) 2018-2020 The Calindori Team"));

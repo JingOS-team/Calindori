@@ -44,9 +44,11 @@ Item {
     width: childrenRect.width
     height: childrenRect.height
 
-    Item {
+    Rectangle {
         width: dayDelegate.delegateWidth
         height: delegateHeigh
+
+        color: settingMinorBackground
 
         Item {
             id: dayButton
@@ -77,8 +79,8 @@ Item {
                 opacity: highlight ? 1 : (model.index % 7 === 0 | model.index
                                           % 7 === 6 | !isCurrentMonth) ? 0.3 : 1
                 text: model.dayNumber
-                color: highlight ? "white" : (isToday ? "red" : "black")
-                font.pixelSize: highlight ? 22: 19
+                color: highlight ? "white" : (isToday ? "red" : majorForeground)
+                font.pixelSize: highlight ? 22 * appFontSize : 19 * appFontSize
             }
 
             Rectangle {

@@ -33,6 +33,17 @@ IncidenceModel::IncidenceModel(QObject *parent) :
     connect(this, &IncidenceModel::filterHourChanged, this, &IncidenceModel::loadIncidences);
     connect(this, &IncidenceModel::calendarChanged, this, &IncidenceModel::loadIncidences);
     connect(this, &IncidenceModel::calendarFilterChanged, this, &IncidenceModel::loadIncidences);
+
+    KSharedConfig::Ptr timezoneConfig = KSharedConfig::openConfig(QStringLiteral("plasma-localerc"), KConfig::SimpleConfig);
+    KConfigGroup timezoneSettings = KConfigGroup(timezoneConfig, "Formats");
+    QString timezone = timezoneSettings.readEntry("LC_TIME", QStringLiteral("en_US.UTF-8"));
+
+    if(timezone.contains("zh_")){
+        isChinese = true;
+    }else{
+        isChinese = false;
+    }
+
 }
 
 IncidenceModel::~IncidenceModel() = default;
@@ -500,7 +511,14 @@ QString IncidenceModel::displayStartDate(const int idx) const
 
     if (incidence->dtStart().isValid()) {
 
-        return m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "MMM d");
+        if(isChinese){
+            QString mon = m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "M");
+            QString day = m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "d");
+            return mon + "月" + day + "日";
+        }
+        else{
+            return m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "MMM d");
+        }
     }
 
     return QString();
@@ -515,8 +533,39 @@ QString IncidenceModel::displayStartDateOfWeek(const int idx) const
         int currentYear =  QDateTime::currentDateTime().date().year();
         int dtStartYear  = incidence->dtStart().date().year();
 
-        return currentYear == dtStartYear ? m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "dddd, MMM d")
-                                           : m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "yyyy, dddd, MMM d");
+        QString year = m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "yyyy");
+        QString mon = m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "M");
+        QString day = m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "d");
+        QString weekend = m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "dddd");
+        if (weekend == "Friday"){
+            weekend = "星期五";
+        }
+        else if(weekend == "Monday"){
+            weekend = "星期一";
+        }
+        else if(weekend == "Tuesday"){
+            weekend = "星期二";
+        }
+        else if(weekend == "Wednesday"){
+            weekend = "星期三";
+        }
+        else if(weekend == "Thursday"){
+            weekend = "星期四";
+        }
+        else if(weekend == "Saturday"){
+            weekend = "星期六";
+        }
+        else if(weekend == "Sunday"){
+            weekend = "星期日";
+        }
+
+        if (isChinese){
+            return currentYear == dtStartYear ? (mon + "月" + day + "日" + weekend) : (year + "年" + mon + "月" + day + "日" + weekend);
+        }
+        else{
+            return currentYear == dtStartYear ? m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "dddd, MMM d")
+                                           : m_locale.toString(incidence->dtStart().toTimeZone(QTimeZone::systemTimeZone()).date(), "yyyy, dddd MMM d");
+        }
     }
 
     return QString();
@@ -558,7 +607,33 @@ QString IncidenceModel::displayStartTime(const int idx) const
         return i18n("all-day");
     }
     QString format = is24HourFormat() ? "HH:mm" : "h:mm ap";
-    return startDt.isValid() ? m_locale.toString(startDt.time(), format) : QString();
+
+    return startDt.isValid() ?  m_locale.toString(startDt.time(), format) : QString();
+    if (!startDt.isValid()){
+        return QString();
+    }
+    else{
+         if (is24HourFormat()){
+             return m_locale.toString(startDt.time(), "HH:mm");
+         }
+         else{
+             if (!isChinese){
+                  return m_locale.toString(startDt.time(), "h:mm ap");
+             }
+             else{
+                QString time = m_locale.toString(startDt.time(), "h:mm");
+                QString apm = m_locale.toString(startDt.time(), "ap");
+                if (apm == "am"){
+                    apm = "上午";
+                }
+                else{
+                    apm = "下午";
+                }
+                return time + " " + apm;
+             }
+             
+         }
+    }
 }
 
 void IncidenceModel::setAppLocale(const QLocale &qmlLocale)

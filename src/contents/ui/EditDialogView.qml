@@ -7,12 +7,13 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtGraphicalEffects 1.15
+import org.kde.kirigami 2.15 as Kirigami
 
 Menu {
     id: menu
 
-    property int mwidth: mainWindow.height / 3
-    property int mheight: mainWindow.height / 13.3
+    property int mwidth: mainWindow.height / 3.2
+    property int mheight: mainWindow.height / 14
     property var separatorColor: "#80FFFFFF"
     property int separatorWidth: mwidth * 9 / 10
     property bool isDeleteCicked: false
@@ -58,11 +59,11 @@ Menu {
                 text: menuItem.text
                 font.pixelSize: 14
                 
-                color: menuItem.highlighted ? "#000000" : "#000000"
+                color: menuItem.highlighted ? majorForeground : majorForeground
                 elide: Text.ElideRight
             }
 
-            Image {
+            Kirigami.Icon {
                 id: rightImage
 
                 anchors {
@@ -75,6 +76,7 @@ Menu {
                 height: mheight / 2.8
 
                 source: "qrc:/assets/edit_delete_black.png"
+                color: majorForeground
             }
         }
 
@@ -91,7 +93,7 @@ Menu {
     background: Rectangle {
         width: mwidth
 
-        color: "white"
+        color: cardBackground
         radius: mheight / 3.75
 
         VagueBackground {
@@ -107,8 +109,7 @@ Menu {
             horizontalOffset: 0
             radius: 20
             samples: 25
-            color: "#1A000000"
-            verticalOffset: 10
+            color: isDarkTheme ? "#FF26262A" : "#1A000000"
             spread: 0
         }
     }

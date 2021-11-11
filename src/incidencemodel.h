@@ -164,6 +164,7 @@ private:
     Incidence::List m_incidences;
     QLocale m_locale;
     CalFilter *m_cal_filter;
+    bool isChinese;
 };
 
 #endif //INCIDENCE_MODEL_H

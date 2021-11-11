@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Bob <pengbo·wu@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -10,14 +11,18 @@
 #include <KCalendarCore/MemoryCalendar>
 #include <KLocalizedString>
 #include <QDebug>
+#include <QDBusConnection>
+#include <KSharedConfig>
+#include <KConfigWatcher>
 
-EventController::EventController(QObject *parent) : QObject(parent) {}
+EventController::EventController(QObject *parent) : QObject(parent) {
+    m_dbusMessage =  QDBusMessage::createSignal("/org/kde/jingos/calendar", "org.kde.jingos.calendar", "eventRemove");
+}
 
 EventController::~EventController() = default;
 
 void EventController::remove(LocalCalendar *calendar, const QVariantMap &eventData)
 {
-    qDebug() << "Deleting event";
     MemoryCalendar::Ptr memoryCalendar = calendar->memorycalendar();
     QString uid = eventData["uid"].toString();
     Event::Ptr event = memoryCalendar->event(uid);
@@ -25,13 +30,14 @@ void EventController::remove(LocalCalendar *calendar, const QVariantMap &eventDa
     bool deleted = calendar->save();
     Q_EMIT calendar->eventsChanged();
 
-    qDebug() << "Event deleted: " << deleted;
+    QList<QVariant> args;
+    args.append(uid);
+    m_dbusMessage.setArguments(args);
+    QDBusConnection::sessionBus().send(m_dbusMessage);
 }
 
 QString EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eventData)
 {
-    qDebug() << "\naddEdit:\tCreating event "<<eventData;
-
     MemoryCalendar::Ptr memoryCalendar = calendar->memorycalendar();
     QDateTime now = QDateTime::currentDateTime();
     QString uid = eventData["uid"].toString();
@@ -40,9 +46,7 @@ QString EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eve
     Event::Ptr event;
     if (uid == "") {
         event = Event::Ptr(new Event());
-        
         event->setUid(summary.at(0) + now.toString("yyyyMMddhhmmsszzz"));
-        
     } else {
         event = memoryCalendar->event(uid);
         event->setUid(uid);
@@ -85,7 +89,6 @@ QString EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eve
         int startOffsetType = newAlarmHashMap["startOffsetType"].value<int>();
         int actionType = newAlarmHashMap["actionType"].value<int>();
 
-        qDebug() << "addEdit:\tAdding alarm with start offset value " << startOffsetValue;
         newAlarm->setStartOffset(Duration(startOffsetValue, static_cast<Duration::Type>(startOffsetType)));
         newAlarm->setType(static_cast<Alarm::Type>(actionType));
         newAlarm->setEnabled(true);
@@ -103,23 +106,23 @@ QString EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eve
         }
 
         switch (newPeriod) {
-        case Recurrence::rYearlyDay:
-        case Recurrence::rYearlyMonth:
-        case Recurrence::rYearlyPos:
-            event->recurrence()->setYearly(eventData["repeatEvery"].toInt());
-            break;
-        case Recurrence::rMonthlyDay:
-        case Recurrence::rMonthlyPos:
-            event->recurrence()->setMonthly(eventData["repeatEvery"].toInt());
-            break;
-        case Recurrence::rWeekly:
-            event->recurrence()->setWeekly(eventData["repeatEvery"].toInt());
-            break;
-        case Recurrence::rDaily:
-            event->recurrence()->setDaily(eventData["repeatEvery"].toInt());
-            break;
-        default:
-            event->recurrence()->clear();
+            case Recurrence::rYearlyDay:
+            case Recurrence::rYearlyMonth:
+            case Recurrence::rYearlyPos:
+                event->recurrence()->setYearly(eventData["repeatEvery"].toInt());
+                break;
+            case Recurrence::rMonthlyDay:
+            case Recurrence::rMonthlyPos:
+                event->recurrence()->setMonthly(eventData["repeatEvery"].toInt());
+                break;
+            case Recurrence::rWeekly:
+                event->recurrence()->setWeekly(eventData["repeatEvery"].toInt());
+                break;
+            case Recurrence::rDaily:
+                event->recurrence()->setDaily(eventData["repeatEvery"].toInt());
+                break;
+            default:
+                event->recurrence()->clear();
         }
 
         if (newPeriod != Recurrence::rNone) {
@@ -140,13 +143,25 @@ QString EventController::addEdit(LocalCalendar *calendar, const QVariantMap &eve
     bool merged = calendar->save();
     Q_EMIT calendar->eventsChanged();
 
-    qDebug() << "addEdit:\tEvent added/updated: " << merged;
     return  event->uid();
 }
 
 QDateTime EventController::localSystemDateTime() const
 {
     return QDateTime::currentDateTime();
+}
+
+bool EventController::getRegionTimeFormat()const
+{
+    KSharedConfig::Ptr timezoneConfig = KSharedConfig::openConfig(QStringLiteral("plasma-localerc"), KConfig::SimpleConfig);
+    KConfigGroup timezoneSettings = KConfigGroup(timezoneConfig, "Formats");
+    QString timezone = timezoneSettings.readEntry("LC_TIME", QStringLiteral("en_US.UTF-8"));
+
+    if (timezone.contains("zh_")) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 QVariantMap EventController::validate(const QVariantMap &eventMap) const

@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Bob <pengbo·wu@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */

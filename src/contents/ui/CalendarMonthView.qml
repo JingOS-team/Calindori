@@ -43,6 +43,7 @@ Rectangle {
     signal goToday
 
     clip: true
+    color : settingMinorBackground
 
     onNextMonth: {
         mm.goNextMonth()
@@ -84,9 +85,8 @@ Rectangle {
         year: monthView.selectedDate.getFullYear()
         month: monthView.selectedDate.getMonth() + 1
         calendar: cal
-        onMonthChanged:{
+        onMonthChanged: {
             monthView.monthChanged()
-            
         }
     }
 
@@ -97,8 +97,8 @@ Rectangle {
 
         daysModel: mm
         applicationLocale: _appLocale
-        displayedYear: mm.year
-        displayedMonthName: i18n(_appLocale.standaloneMonthName(mm.month - 1))
+        displayedYear: _eventController.getRegionTimeFormat() ? mm.year + "年" : mm.year
+        displayedMonthName: _eventController.getRegionTimeFormat() ? (mm.month) + "月" : _appLocale.standaloneMonthName(mm.month - 1)
         selectedDate: _eventController.localSystemDateTime()
         currentDate: _eventController.localSystemDateTime()
     }

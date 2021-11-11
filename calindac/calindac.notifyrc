@@ -55,6 +55,7 @@ Name[sv]=Calendar
 Name[uk]=Calendar
 Name[x-test]=xxCalendarxx
 Name[zh_TW]=Calendar
+Name[zh_CN]=日历
 
 [Context/uid]
 Name=Calendar
@@ -158,5 +159,6 @@ Comment[x-test]=xxAlarm Notificationxx
 Comment[zh_TW]=鬧鐘通知
 Action=Popup|Sound
 Urgency=Critical
-Sound=file:///usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
+#Sound=jing/alarm-clock.oga
+
 

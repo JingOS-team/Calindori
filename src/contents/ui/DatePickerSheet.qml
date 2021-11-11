@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Bob <pengbo·wu@jijngos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -23,8 +24,7 @@ Kirigami.OverlaySheet {
     signal datePicked
     signal timePicked
 
-
-    function initWidgetState(){
+    function initWidgetState() {
         calendarMonth.initWidgetState()
     }
 
@@ -32,12 +32,11 @@ Kirigami.OverlaySheet {
         Layout.preferredWidth: childrenRect.width + datePickerSheet.rightPadding + datePickerSheet.leftPadding
         PickerMonthView {
             id: calendarMonth
+
             selectorHour : selectedHour
             selectorMinutes : selectedMinutes
-
             Layout.alignment: Qt.AlignHCenter
         }
-
     }
 
     footer: RowLayout {
@@ -50,16 +49,15 @@ Kirigami.OverlaySheet {
             text: "OK"
 
             onClicked: {
-                if(calendarMonth.isWheelViewShowing){
+                if (calendarMonth.isWheelViewShowing) {
                     calendarMonth.initWidgetState()
                     calendarMonth.setSelectDate()
-                }else{
+                } else {
                     calendarMonth.setSelectTime()
                     datePickerSheet.datePicked();
                     datePickerSheet.timePicked();
                     datePickerSheet.close();
                 }
-
             }
         }
         Controls2.ToolButton {

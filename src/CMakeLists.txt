@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2020 Dimitris Kardarakos <dimkard@posteo.net>
+#                         2021 Bob <pengbo·wu@jingos.com>
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
@@ -23,7 +24,7 @@ set(calindori_SRCS
 qt5_add_resources(RESOURCES resources.qrc)
 
 add_executable(calindori ${calindori_SRCS} ${RESOURCES})
-target_link_libraries(calindori Qt5::Core Qt5::Qml Qt5::Quick Qt5::Test Qt5::Svg Qt5::DBus KF5::ConfigCore KF5::I18n KF5::CalendarCore KF5::CoreAddons)
+target_link_libraries(calindori Qt5::Core Qt5::Qml Qt5::Quick Qt5::Test Qt5::Svg Qt5::DBus KF5::ConfigCore KF5::I18n KF5::CalendarCore KF5::CoreAddons jappcoreqt)
 
 
 if(ANDROID)

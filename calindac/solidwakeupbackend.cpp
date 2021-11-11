@@ -25,8 +25,6 @@ QVariant SolidWakeupBackend::scheduleWakeup(const QVariantMap &callbackInfo, con
 {
     auto scheduledAt = QDateTime::fromSecsSinceEpoch(wakeupAt);
 
-    qDebug() << "SolidWakeupBackend::scheduleWakeup at" << scheduledAt.toString("dd.MM.yyyy hh:mm:ss") << "tz " << scheduledAt.timeZoneAbbreviation() << " epoch" << wakeupAt;
-
     if (m_interface->isValid()) {
         QDBusReply<uint> reply = m_interface->call(QStringLiteral("scheduleWakeup"), callbackInfo["dbus-service"].toString(), QDBusObjectPath(callbackInfo["dbus-path"].toString()), wakeupAt);
         return reply.value();

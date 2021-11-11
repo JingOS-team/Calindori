@@ -1,0 +1,35 @@
+Source: calindori
+Section: kde
+Priority: optional
+Maintainer: Debian/Kubuntu Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
+XSBC-Original-Maintainer: Linus Jahn <lnj@kaidan.im>
+Build-Depends: cmake (>= 3.0.0),
+               debhelper (>= 11),
+               extra-cmake-modules,
+               kirigami2-dev,
+               libkf5calendarcore-dev,
+               libkf5config-dev,
+               libkf5i18n-dev,
+               libkf5plasma-dev,
+               libqt5svg5-dev,
+               qtmultimedia5-dev,
+               pkg-config,
+               pkg-kde-tools (>= 0.9),
+               qtbase5-dev,
+               qtdeclarative5-dev,
+               qtquickcontrols2-5-dev,
+               japp-sdk-qt-dev,
+               qttools5-dev
+Standards-Version: 4.2.1
+Homepage: https://invent.kde.org/kde/calindori
+Vcs-Browser: https://gitlab.com/debian-pm/apps/calindori
+Vcs-Git: https://gitlab.com/debian-pm/apps/calindori.git
+
+Package: calindori
+Architecture: any
+Depends: qml-module-org-kde-kirigami2,
+         qml-module-qtquick-controls2,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Description: Calendar application for Plasma Mobile
+ Simple calendar using Kirigami for a convergent user interface.

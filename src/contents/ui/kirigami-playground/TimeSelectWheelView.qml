@@ -1,8 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
+ * Copyright (C) 2021 Beijing Jingling Information System Technology Co., Ltd. All rights reserved.
  *
- * SPDX-License-Identifier: GPL-3.0-or-later
+ * Authors:
+ * Bob <pengbo·wu@jingos.com>
+ *
  */
+
 import QtQuick 2.0
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.0 as Controls2
@@ -14,7 +17,7 @@ RowLayout {
 
     property alias hourNumber: hourWheelView.value
     property alias minutesNumber: timeWheelVIew.value
-    property bool is24HourFormat
+    property bool is24HourFormat: timezoneProxy.isSystem24HourFormat
     property int hourFormatNumber: is24HourFormat ? 24 : 12
     property bool pmSelected
     property var pos1
@@ -22,14 +25,13 @@ RowLayout {
     width: popup.width - popup.commMargin * 2
 
     spacing: 0
-
     Rectangle {
         id: hourRect
 
         width: popup.width / 5.18
         height: width
-        color: "#1e767680"
-        radius: 7
+        color:  isDarkTheme ? "#338E8E93" : "#1e767680"
+        radius: 7 * appScale
 
         WheelView {
             id: hourWheelView
@@ -41,17 +43,15 @@ RowLayout {
                 var list = []
                 for (var i = 0; i < hourFormatNumber; i++)
                     list.push({
-                                  "display": (!is24HourFormat
-                                              && i === 0 ? 12 + "" : i / 10 < 1 ? "0" + i : "" + i),
-                                  "value": i
-                              })
+                        "display": (!is24HourFormat && i === 0 ? 12 + "" : i / 10 < 1 ? "0" + i : "" + i),
+                        "value": i
+                    })
                 return list
             }
 
-            value: hourNumber
-
+            // value: hourNumber
             pathItemCount: 1
-            displayFontSize: 20
+            displayFontSize: 20 * appFontSize
 
             onViewMove: {
                 popup.isTimeDataChanged = true
@@ -86,8 +86,8 @@ RowLayout {
             Image {
                 anchors.horizontalCenter: parent.horizontalCenter
 
-                sourceSize.width: hourRect.height / 3
-                sourceSize.height: hourRect.height / 3
+                width: hourRect.height / 3
+                height: hourRect.height / 3
 
                 source: "qrc:/assets/triangle_up.png"
             }
@@ -102,7 +102,7 @@ RowLayout {
 
             MouseArea {
                 anchors.fill: parent
-                
+
                 onClicked: {
                     popup.isTimeDataChanged = true
                     hourNumber--
@@ -117,8 +117,8 @@ RowLayout {
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
 
-                sourceSize.width: hourRect.height / 3
-                sourceSize.height: hourRect.height / 3
+                width: hourRect.height / 3
+                height: hourRect.height / 3
 
                 source: "qrc:/assets/triangle_down.png"
             }
@@ -176,7 +176,6 @@ RowLayout {
             onWheel: {
                 popup.isTimeDataChanged = true
                 var wY = wheel.angleDelta.y
-
                 if (wY == 120) {
                     hourNumber = hourNumber - 1
                     if (hourNumber < 0) {
@@ -202,7 +201,11 @@ RowLayout {
                     if (contentY != 0) {
                         var count = parseInt(contentY / 250)
                         if (Math.abs(contentY) < 300) {
-                            count = 1
+                            if(contentY > 0){
+                                count = 1
+                            }else{
+                                count = -1
+                            }
                         }
                         isReduce = false
                         contentY = 0
@@ -232,6 +235,9 @@ RowLayout {
         width: hourRect.width / 1.9
         height: hourRect.height
 
+        //color: isDarkTheme ? "#E626262A" : "white"
+        color: "transparent"
+
         Column {
             anchors.centerIn: symbol
 
@@ -240,21 +246,21 @@ RowLayout {
             Rectangle {
                 anchors.verticalCenter: parent.horizontalCenter
 
-                width: 5
+                width: 5 * appScale
                 height: width
 
                 radius: width / 2
-                color: "black"
+                color: majorForeground
             }
 
             Rectangle {
                 anchors.verticalCenter: parent.horizontalCenter
 
-                width: 5
+                width: 5 * appScale
                 height: width
 
                 radius: width / 2
-                color: "black"
+                color: majorForeground
             }
         }
     }
@@ -265,8 +271,8 @@ RowLayout {
         width: popup.width / 5.18
         height: width
 
-        color: "#1e767680"
-        radius: 7
+        color: isDarkTheme ? "#338E8E93" : "#1e767680"
+        radius: 7 * appScale
 
         WheelView {
             id: timeWheelVIew
@@ -286,7 +292,7 @@ RowLayout {
 
             value: minutesNumber
             pathItemCount: 1
-            displayFontSize: 20
+            displayFontSize: 20 * appFontSize
 
             onViewMove: {
                 popup.isTimeDataChanged = true
@@ -322,8 +328,8 @@ RowLayout {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
 
-                sourceSize.width: hourRect.height / 3
-                sourceSize.height: hourRect.height / 3
+                width: hourRect.height / 3
+                height: hourRect.height / 3
 
                 source: "qrc:/assets/triangle_up.png"
             }
@@ -353,8 +359,8 @@ RowLayout {
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
 
-                sourceSize.width: hourRect.height / 3
-                sourceSize.height: hourRect.height / 3
+                width: hourRect.height / 3
+                height: hourRect.height / 3
 
                 source: "qrc:/assets/triangle_down.png"
             }
@@ -437,7 +443,11 @@ RowLayout {
                     if (contentY != 0) {
                         var count = parseInt(contentY / 250)
                         if (Math.abs(contentY) < 300) {
-                            count = 1
+                            if(contentY > 0){
+                                count = 1
+                            }else{
+                                count = -1
+                            }
                         }
                         isReduce = false
                         contentY = 0
@@ -474,28 +484,29 @@ RowLayout {
         height: minuteRect.height
 
         visible: is24HourFormat
+        color: "transparent"
 
         Kirigami.Label {
             anchors.centerIn: parent
 
-            text: "24 Hours"
-            color: "#FFA6A6A7"
-            font.pixelSize: 14
+            text: i18n("24 Hours")
+            color: isDarkTheme ? "#8CF7F7F7" : "#FFA6A6A7"
+            font.pixelSize: 14 *appFontSize
         }
     }
 
     Rectangle {
 
         anchors.left: minuteRect.right
-        anchors.leftMargin: 12
+        anchors.leftMargin: 20 * appScale
 
-        width: timeRow.width - hourRect.width - symbol.width - minuteRect.width - 12
+        width: timeRow.width - hourRect.width - symbol.width - minuteRect.width - 12 * appScale
         height: minuteRect.height
 
         visible: !is24HourFormat
 
-        color: "#1e767680"
-        radius: 7
+        color: isDarkTheme ? "#338E8E93" : "#1e767680"
+        radius: 7 * appScale
 
         Item {
             id: amRect
@@ -508,10 +519,10 @@ RowLayout {
             Kirigami.Label {
                 anchors.centerIn: parent
 
-                text: "AM"
-                color: "#FF000000"
-                opacity: pmSelected ? 0.3 : 1
-                font.pixelSize: 14
+                text: _eventController.getRegionTimeFormat() ? "上午" : "AM"
+                color: majorForeground
+                opacity: popup.startPm ? 0.3 : 1
+                font.pixelSize: 14 * appFontSize
 
                 MouseArea {
                     anchors.fill: parent
@@ -542,10 +553,10 @@ RowLayout {
             Kirigami.Label {
                 anchors.centerIn: parent
 
-                text: "PM"
-                opacity: pmSelected ? 1 : 0.3
-                color: "#FF000000"
-                font.pixelSize: 14
+                text: _eventController.getRegionTimeFormat() ? "下午" : "PM"
+                opacity: popup.startPm ? 1 : 0.3
+                color: majorForeground
+                font.pixelSize: 14 * appFontSize
 
                 MouseArea {
                     anchors.fill: parent

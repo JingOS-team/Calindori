@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
+ * Copyright (C) 2021 Beijing Jingling Information System Technology Co., Ltd. All rights reserved.
  *
- * SPDX-License-Identifier: GPL-3.0-or-later
+ * Authors:
+ * Bob <pengbo·wu@jingos.com>
+ *
  */
 
-import QtQuick 2.7
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import org.kde.kirigami 2.15 as Kirigami
@@ -12,7 +14,7 @@ import org.kde.calindori 0.1 as Calindori
 import QtQuick.Controls.Styles 1.4
 import QtGraphicalEffects 1.15
 
-Popup {
+Kirigami.JArrowPopup {
     id: popup
 
     property string uid
@@ -33,10 +35,9 @@ Popup {
     property var location: ""
     property var incidenceAlarmsModel
     property var incidenceData
-    property alias upBarVisible: upBar.visible
     property var currentIndex
     property var screenWidth: mainWindow.width
-    property var is24HourFormat: mm.is24HourFormat()
+    property bool is24HourFormat: timezoneProxy.isSystem24HourFormat
     property bool monthViewVisible
     property int commMargin: popup.width / 16
     property bool isDataChanged
@@ -48,28 +49,41 @@ Popup {
     property int popupTopMargin : mainWindow.height / 8.8
     property alias rightBarY : rightBar.y
     property bool isCoverArea: false
+    property bool isSaveBtClick: false
+    property var arrowPosition : Kirigami.JRoundRectangle.ARROW_TOP
+    property bool isLoadFirstDate : false
 
     signal pmSelectorChanged(bool b)
     signal dateValueChanged(var type, int value)
 
     anchors.centerIn: parent
-    topMargin: popupTopMargin
-    leftMargin: mainWindow.width / 2.6
+    topMargin: 71 * appScale
+    leftMargin: root.width - width
 
-    width: mainWindow.width / 1920 * 620
+    width: 310 * appScale
+    height: 560 * appScale
 
-    contentHeight: expandHeight
-    contentWidth: mainWindow.width / 1920 * 620
+    contentHeight: height
+    contentWidth: width
     padding: 0
     topInset: 0
     leftInset: 0
     rightInset: 0
     bottomInset: 0
+    leftPadding:0
+    rightPadding:0
+    topPadding:0
+    bottomPadding:0
+
+    blurBackground.arrowX: width * 0.85 * appScale + 2 * appScale
+    blurBackground.arrowY: 300 * appScale
+    blurBackground.arrowWidth: 16 * appScale
+    blurBackground.arrowHeight: 11 * appScale
 
     modal: true
     focus: true
     closePolicy: isDataChanged | isTimeDataChanged ? Popup.NoAutoClose : (Popup.CloseOnEscape | Popup.CloseOnPressOutside)
-   
+
     Overlay.modal: Rectangle {
         color: "transparent"
     }
@@ -78,7 +92,10 @@ Popup {
     }
 
     onPmSelectorChanged: {
+        if(startPm == b)
+            return
         startPm = b
+        isTimeDataChanged = true
     }
 
     onClosed: {
@@ -86,11 +103,22 @@ Popup {
     }
 
     onOpened: {
-        eventSummary.cursorPosition = 0
+        isSaveBtClick = false
         isDataChanged = false
         isTimeDataChanged = false
         calendarMonth.initWidgetState()
         calendarMonth.updateWheelViewData()
+    }
+
+    enter: Transition {
+        ParallelAnimation {
+            NumberAnimation {
+                property: "opacity";
+                from: 0.0;
+                to: 1.0;
+                duration: 75
+            }
+        }
     }
 
     Calindori.IncidenceAlarmsModel {
@@ -108,12 +136,13 @@ Popup {
         name: _calindoriConfig.activeCalendar
     }
 
-    function loadNewDate() { 
+    function loadNewDate() {
+        isLoadFirstDate = false
+        arrowPosition = Kirigami.JRoundRectangle.ARROW_RIGHT
         popupTopMargin = mainWindow.height / 14.8
         scroll.visible = true
-        alertSelector.visible = false
         rowTitle.visible = true
-        eventSummary.focus = false
+        eventSummary.focus = true
         eventSummary.text = incidenceData ? incidenceData.summary : ""
         var newDt
 
@@ -121,14 +150,15 @@ Popup {
             newDt = incidenceData.dtstart
         } else {
             newDt = startDt
-            newDt.setMinutes(newDt.getMinutes(
-                                 ) + _calindoriConfig.eventsDuration)
+            newDt.setMinutes(newDt.getMinutes() + _calindoriConfig.eventsDuration)
             newDt.setSeconds(0)
         }
         popup.startDt = newDt;
         eventDate.selectorDate = newDt
         eventTime.selectorHour = newDt.getHours()
         eventTime.selectorMinutes = newDt.getMinutes()
+
+        eventTime.selectorPm = popup.incidenceData ? (popup.incidenceData.dtstart.getHours()>= 12) : (popup.startDt.getHours() >= 12)
 
         calendarMonth.selectedDate = newDt
         calendarMonth.selectorHour = newDt.getHours()
@@ -137,8 +167,7 @@ Popup {
         var displayNameTrim =  incidenceAlarmsModel.displayText(0)
         currentAlerTimeName = displayNameTrim
         eventAlert.text = i18n(displayNameTrim)
-        popup.upBarVisible = false
-        rightBar.visible = true
+        rightBar.visible = false
         calendarMonth.pmSelected = startPm
 
         titleLabel.text = i18n("Edit Event")
@@ -146,9 +175,10 @@ Popup {
     }
 
     function initFirstData() {
+        isLoadFirstDate = true
+        arrowPosition = Kirigami.JRoundRectangle.ARROW_TOP
         popupTopMargin = mainWindow.height / 8.2
         scroll.visible = true
-        alertSelector.visible = false
         rowTitle.visible = true
         eventSummary.focus = true
         eventSummary.forceActiveFocus()
@@ -158,13 +188,13 @@ Popup {
         var startDt = calendarMonthView.selectedDate
         startDt.setHours(currentDt.getHours())
         startDt.setMinutes(currentDt.getMinutes())
-        startDt.setSeconds(0)   
+        startDt.setSeconds(0)
 
         startHour = startDt.getHours()
         startMinute = startDt.getMinutes()
         popup.startDt = startDt;
 
-        calendarMonth.selectorHour = startDt.getHours()
+        calendarMonth.selectorHour = is24HourFormat ? startDt.getHours() : (startDt.getHours() % 12 == 0 ? 12 : startDt.getHours() % 12)
         calendarMonth.selectorMinutes = startDt.getMinutes()
         calendarMonth.selectedDate = startDt
 
@@ -173,8 +203,10 @@ Popup {
         incidenceAlarmsModel = localAlarmsModel
         currentAlerTimeName = "None"
         eventAlert.text = i18n("None")
-        popup.upBarVisible = true
         rightBar.visible = false
+        if(!is24HourFormat) {
+            startPm = startDt.getHours() >= 12
+        }
         calendarMonth.pmSelected = startPm
         incidenceData = null
 
@@ -194,588 +226,479 @@ Popup {
     Rectangle {
         id: rightBar
 
-        y:rightBarY
-        
+        y: rightBarY
+
         anchors.right: parent.right
-        anchors.rightMargin: -12 * appScale
+        anchors.rightMargin: - 12 * appScale
 
         width: 32 * appScale
         height: 32 * appScale
 
-        visible: false
+        visible: true
         rotation: 45
+        color: isDarkTheme ? "#E626262A" : "white"
     }
 
-    background: Rectangle {
-        id: background
+    contentItem: StackView {
+        id: stackItem
 
-        anchors.fill:parent
-
-        color:"transparent"
-
-        Rectangle{
-            anchors.top:parent.top
-
-            width:parent.width
-            height: 32 * appScale
-
-            radius: 12
-            layer.enabled: true
-            layer.effect: DropShadow {
-                radius: 40
-                samples: 25
-                color: "#1A000000"
-                verticalOffset: 0
-                horizontalOffset: 0
-                spread: 0
+        clip: true
+        popEnter: Transition {
+            ParallelAnimation {
+                OpacityAnimator {
+                    from: 0
+                    to: 1
+                    duration: 75
+                }
             }
         }
 
-        Rectangle {
-            id: upBar
+        popExit: Transition {
+            ParallelAnimation {
 
-            anchors.top: parent.top
-            anchors.topMargin: -12 * appScale
-            anchors.right: parent.right
-            anchors.rightMargin: 42
-
-            width: 32 * appScale
-            height: 32 * appScale
-
-            color:"white"
-            visible: true
-            rotation: 45
-
-            layer.enabled: true
-            layer.effect: DropShadow {
-                radius: 40
-                samples: 25
-                color: "#1A000000"
-                verticalOffset: 0
-                horizontalOffset: 0
-                spread: 0
+                OpacityAnimator {
+                    from: 1
+                    to: 0
+                    duration: 75
+                }
             }
         }
-    }
 
-    contentItem: Rectangle {
-        id: contentItem
+        pushEnter: Transition {
+            ParallelAnimation {
 
-        anchors.centerIn: parent
-        implicitWidth: parent.width
-
-        radius: 12
-
-        layer.enabled: true
-        layer.effect: DropShadow {
-            horizontalOffset: -10
-            radius: 40
-            samples: 25
-            color: "#1A000000"
-            verticalOffset: 20
-            spread: 0
+                OpacityAnimator {
+                    from: 0
+                    to: 1
+                    duration: 75
+                }
+            }
         }
 
-        ShaderEffectSource {
-            id: eff
+        pushExit: Transition {
+            ParallelAnimation {
 
-            width: fastBlur.width
-            height: fastBlur.height
-
-            visible: false
-            sourceRect: Qt.rect(mainWindow.width / 2.6 + 20,
-                                mainWindow.height / 11.65 + 40, width, height)
-            sourceItem: sourceView
+                OpacityAnimator {
+                    from: 1
+                    to: 0
+                    duration: 75
+                }
+            }
         }
 
-        FastBlur {
-            id: fastBlur
-
-            width: mainWindow.width
-            height: expandHeight
-
-            source: eff
-            radius: 144
-            cached: true
-            visible: false
-        }
-
-        Rectangle {
-            id: maskRect
-
-            anchors.fill: fastBlur
-
-            visible: false
-            clip: true
-        }
-
-        OpacityMask {
-            id: mask
-
-            anchors.fill: maskRect
-
-            visible: true
-            opacity: 0.1
-            source: fastBlur
-            maskSource: maskRect
-        }
-
-        RowLayout {
-            id: rowTitle
+        initialItem: Item {
+            id: eventItem
 
             anchors {
                 top: parent.top
-                topMargin: popup.commMargin
+                topMargin: 21 * appScale
                 left: parent.left
                 right: parent.right
-                leftMargin: popup.commMargin
-                rightMargin: popup.commMargin
+                leftMargin: 20 * appScale
+                rightMargin: 20 * appScale
             }
 
-            Kirigami.Label {
-                id: titleLabel
-
-                text: i18n("New Event")
-                font.pixelSize: 20
-                
-            }
-
-            Kirigami.Separator {
-                Layout.fillWidth: true
-
-                color: "transparent"
-            }
-
-            Kirigami.JIconButton {
-                id: eventCacel
-
-                anchors.right: eventConfirm.left
-                anchors.rightMargin: popup.width / 9.25 - 15
-
-                width: 32
-                height: 32
-
-                source: "qrc:/assets/event_cancel.png"
-
-                onClicked: {
-                    rowMain.eventCancelCompleted()
-                    popup.close()
-                }
-            }
-
-            Kirigami.JIconButton {
-                id: eventConfirm
-
-                anchors.right: parent.right
-
-                width: popup.width / 14 + 10
-                height: popup.width / 14.74 + 10
-
-                source: "qrc:/assets/event_confirm.png"
-                enabled: isDataChanged | isTimeDataChanged
-
-                opacity: enabled ? 1 : 0.4
-
-                onClicked: {
-                    var mSummary = popup.summary == "" ? "New schedule" : popup.summary
-                    var mStart = popup.startDt
-                    mStart.setHours(popup.startHour)
-                    mStart.setMinutes(0)
-                    mStart.setSeconds(0)
-
-                    var currentHour =  is24HourFormat ? popup.startHour  : popup.startHour  % 12
-                    var vevent = {
-                        "uid": popup.uid,
-                        "startDate": mStart,
-                        "summary": mSummary,
-                        "description": popup.description,
-                        "startHour": (currentHour + (!is24HourFormat
-                                                         && popup.startPm ? 12 : 0)),
-                        "startMinute": popup.startMinute,
-                        "allDay": popup.allDay,
-                        "location": popup.location,
-                        "endDate": popup.startDt,
-                        "endHour": (currentHour + (!is24HourFormat
-                                                       && popup.startPm ? 12 : 0)),
-                        "endMinute": popup.startMinute,
-                        "alarms": incidenceAlarmsModel.alarms(),
-                        "periodType": popup.repeatType,
-                        "repeatEvery": popup.repeatEvery,
-                        "stopAfter": popup.repeatStopAfter
-                    }
-
-                    var validation = _eventController.validate(vevent)
-                    if (validation.success) {
-                        var currentUid = _eventController.addEdit(localCalendar, vevent)
-                        rowMain.eventAddCompleted()
-                        calendarMonthView.notifyCalendarChanged(popup.startDt,currentUid)
-                    } else {
-                        showPassiveNotification(validation.reason)
-                    }
-
-                    popup.close()
-                }
-            }
-        }
-
-        ScrollView {
-            id: scroll
-
-            anchors.bottom: blankRect.top
-            anchors.bottomMargin: -6 * appScale
-            anchors.top: rowTitle.bottom
-            anchors.topMargin: popup.width / 14.42
-
-            width: parent.width
-            height: parent.height
-            
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
-
-            clip: true
-
-            ColumnLayout {
-                id: columnLayout
+            RowLayout {
+                id: rowTitle
 
                 anchors {
+                    top: parent.top
                     left: parent.left
                     right: parent.right
-                    leftMargin: popup.commMargin
-                    rightMargin: popup.commMargin
                 }
 
-                width: parent.width
+                Kirigami.Label {
+                    id: titleLabel
 
-                RowLayout {
-                    height: expandHeight / 100 * 9
+                    text: i18n("New Event")
+                    font.pixelSize: 20 *appFontSize
+                    color: majorForeground
+                }
+
+                Kirigami.Separator {
                     Layout.fillWidth: true
 
-                    Item {
-                        width: parent.width
-                        height: parent.height
-                        Layout.fillWidth: true
+                    color: "transparent"
+                }
 
+                Kirigami.JIconButton {
+                    id: eventCacel
+
+                    anchors.right: eventConfirm.left
+                    anchors.rightMargin: 20 * appScale
+
+                    implicitWidth: 32 * appScale
+                    implicitHeight: 31 * appScale
+
+                    source: "qrc:/assets/event_cancel.png"
+
+                    onClicked: {
+                        rowMain.eventCancelCompleted()
+                        popup.close()
+                    }
+                }
+
+                Kirigami.JIconButton {
+                    id: eventConfirm
+
+                    anchors.right: parent.right
+                    implicitWidth: 32 * appScale
+                    implicitHeight: 31 * appScale
+                    source: "qrc:/assets/event_confirm.png"
+                    enabled: isDataChanged | isTimeDataChanged
+                    opacity: enabled ? 1 : 0.4
+
+                    onClicked: {
+                        if (isSaveBtClick) {
+                            return;
+                        }
+                        isSaveBtClick = true
+                        var mSummary = popup.summary == "" ? i18n("New Schedule") : popup.summary
+                        var mStart = popup.startDt
+                        mStart.setHours(popup.startHour)
+                        mStart.setMinutes(0)
+                        mStart.setSeconds(0)
+
+                        var currentHour =  is24HourFormat ? popup.startHour  : popup.startHour  % 12
+                        var vevent = {
+                            "uid": popup.uid,
+                            "startDate": mStart,
+                            "summary": mSummary,
+                            "description": popup.description,
+                            "startHour": (currentHour + (!is24HourFormat
+                                                            && popup.startPm ? 12 : 0)),
+                            "startMinute": popup.startMinute,
+                            "allDay": popup.allDay,
+                            "location": popup.location,
+                            "endDate": popup.startDt,
+                            "endHour": (currentHour + (!is24HourFormat
+                                                        && popup.startPm ? 12 : 0)),
+                            "endMinute": popup.startMinute,
+                            "alarms": incidenceAlarmsModel.alarms(),
+                            "periodType": popup.repeatType,
+                            "repeatEvery": popup.repeatEvery,
+                            "stopAfter": popup.repeatStopAfter
+                        }
+
+                        var validation = _eventController.validate(vevent)
+                        if (validation.success) {
+                            var currentUid = _eventController.addEdit(localCalendar, vevent)
+                            rowMain.eventAddCompleted()
+                            calendarMonthView.notifyCalendarChanged(popup.startDt,currentUid)
+                        } else {
+                            showPassiveNotification(validation.reason)
+                        }
+                        popup.close()
+                    }
+                }
+            }
+
+            Item {
+                id: scroll
+
+                anchors.bottom: blankRect.top
+                anchors.bottomMargin: -6 * appScale
+                anchors.top: rowTitle.bottom
+                anchors.topMargin:22 * appScale
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                height: parent.height
+
+                ColumnLayout {
+                    id: columnLayout
+
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                    }
+
+                    spacing:0
+
+                    Item {
+                        Layout.preferredHeight: 45 * appScale
+                        Layout.fillWidth: true
                         Image {
                             id: summaryIcon
-
+                            width: 22 * appScale
+                            height: 22 * appScale
                             anchors.verticalCenter: parent.verticalCenter
-
-                            sourceSize.width: 22
-                            sourceSize.height: 22
-
                             source: "qrc:/assets/edit_event_summary.png"
                         }
 
-                        TextField {
+                        Kirigami.JTextField {
                             id: eventSummary
 
                             anchors {
                                 left: summaryIcon.right
                                 leftMargin: popup.width / 31
-                                right: clearIcon.left
+                                right: parent.right
                                 verticalCenter: parent.verticalCenter
                             }
 
+                            leftPadding:0
                             maximumLength: 50
+                            placeholderTextColor: majorForeground
                             text: incidenceData ? incidenceData.summary : ""
-                            font.pixelSize: 14
+                            font.pixelSize: 14 * appFontSize
                             placeholderText: i18n("Title")
-
-                            background: Rectangle {
-                                color: "transparent"
-                            }
-
-                            cursorDelegate: CursorBlinks {
-                                targetView: eventSummary
-                            }
-
+                            background: Item {}
                             onTextChanged: {
                                 isDataChanged = true
                             }
                         }
 
-                        Kirigami.JIconButton {
-                            id:clearIcon
-
-                            anchors{
-                                right: parent.right
-                                verticalCenter: parent.verticalCenter
-                            }
-
-                            width: popup.width / 19.375 + 10
-                            height: popup.width / 18.235 + 10
-
-                            visible: eventSummary.text.length > 0
-                            source: "qrc:/assets/icon_clear.png"
-                            
-                            onClicked: {
-                                isDataChanged = true
-                                eventSummary.text = ""
-                            }
-                        }
-
                         Kirigami.Separator {
                             anchors.bottom: parent.bottom
-
                             width: parent.width
 
-                            color: "#FFE5E5EA"
+                            color: dividerForeground
                         }
                     }
-                }
 
-                RowLayout {
-                    height: expandHeight / 100 * 9
-                    width: parent.width
-
-                    Item {
-                        Layout.fillWidth: true
-
+                    RowLayout {
+                        height: expandHeight / 100 * 9
                         width: parent.width
-                        height: parent.height
 
-                        Image {
-                            id: alertIcon
-
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            sourceSize.width: 22
-                            sourceSize.height: 22
-
-                            source: "qrc:/assets/event_alarm.png"
-                        }
-
-                        Kirigami.Label {
-                            anchors {
-                                left: alertIcon.right
-                                leftMargin: popup.width / 31
-                                verticalCenter: parent.verticalCenter
-                            }
-
-                            font.pixelSize: 14
-                            
-                            text: i18n("Alert")
-                        }
-
-                        Kirigami.Label {
-                            id: eventAlert
-
-                            anchors {
-                                right: parent.right
-                                verticalCenter: parent.verticalCenter
-                            }
-
-                            opacity: 0.6
-                            color: "black"
-                            font.pixelSize: 14
-                            text: i18n(currentAlerTimeName)
-
-                            onTextChanged: {
-                                isDataChanged = incidenceAlarmsModel
-                                        && incidenceAlarmsModel.displayText(
-                                            0) !== text
-                            }
-                        }
-
-                        Kirigami.Separator {
-                            anchors.bottom: parent.bottom
+                        Item {
+                            Layout.fillWidth: true
 
                             width: parent.width
+                            height: parent.height
 
-                            color: "#FFE5E5EA"
-                        }
+                            Image {
+                                id: alertIcon
 
-                        MouseArea {
-                            anchors.fill: parent
+                                anchors.verticalCenter: parent.verticalCenter
 
-                            onClicked: {
-                                popup.isTimeDataChanged = true
-                                if (alertSelector.visible == false) {
+                                width: 22 * appScale
+                                height: 22 * appScale
+
+                                source: "qrc:/assets/event_alarm.png"
+                            }
+
+                            Kirigami.Label {
+                                anchors {
+                                    left: alertIcon.right
+                                    leftMargin: popup.width / 31
+                                    verticalCenter: parent.verticalCenter
                                 }
-                                scroll.visible = false
-                                alertSelector.visible = true
-                                rowTitle.visible = false
+
+                                font.pixelSize: 14 * appFontSize
+                                color: majorForeground
+                                text: i18n("Alert")
+                            }
+
+                            Kirigami.Label {
+                                id: eventAlert
+
+                                anchors {
+                                    right: parent.right
+                                    verticalCenter: parent.verticalCenter
+                                }
+
+                                opacity: 0.6
+                                color: majorForeground
+                                font.pixelSize: 14 * appFontSize
+                                text: i18n(currentAlerTimeName)
+
+                                onTextChanged: {
+                                    isDataChanged = incidenceAlarmsModel
+                                            && incidenceAlarmsModel.displayText(0) !== text
+                                }
+                            }
+
+                            Kirigami.Separator {
+                                anchors.bottom: parent.bottom
+
+                                width: parent.width
+
+                                color: dividerForeground
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+
+                                onClicked: {
+                                    popup.isTimeDataChanged = true
+                                    stackItem.push(alertItem)
+                                }
                             }
                         }
                     }
-                }
 
-                RowLayout {
-                    height: expandHeight / 100 * 9
-                    width: parent.width
-
-                    Item {
-                        Layout.fillWidth: true
-
+                    RowLayout {
+                        height: expandHeight / 100 * 9
                         width: parent.width
-                        height: parent.height
 
-                        Image {
-                            id: timeIcon
+                        Item {
+                            Layout.fillWidth: true
 
-                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: parent.height
 
-                            sourceSize.width: 22
-                            sourceSize.height: 22
+                            Image {
+                                id: timeIcon
 
-                            source: "qrc:/assets/edit_event_time.png"
-                        }
+                                anchors.verticalCenter: parent.verticalCenter
 
-                        Kirigami.Label {
-                            anchors {
-                                left: timeIcon.right
-                                leftMargin: popup.width / 31
-                                verticalCenter: parent.verticalCenter
+                                width: 22 * appScale
+                                height: 22 * appScale
+
+                                source: "qrc:/assets/edit_event_time.png"
                             }
 
-                            font.pixelSize: 14
-                            text: i18n("Time")
-                        }
+                            Kirigami.Label {
+                                anchors {
+                                    left: timeIcon.right
+                                    leftMargin: popup.width / 31
+                                    verticalCenter: parent.verticalCenter
+                                }
 
-                        DateSelectorButton {
-                            id: eventDate
-
-                            anchors {
-                                right: eventTime.left
-                                verticalCenter: parent.verticalCenter
+                                font.pixelSize: 14 * appFontSize
+                                text: i18n("Time")
+                                color: majorForeground
                             }
 
-                            implicitWidth: popup.width / 3
+                            DateSelectorButton {
+                                id: eventDate
 
-                            font.pixelSize: 14
-                            textColor: isTimeDataChanged ? "red" : "black"
-                            selectorDate: _eventController.localSystemDateTime()
-                            enabled: false
-                        }
+                                anchors {
+                                    right: eventTime.left
+                                    rightMargin: 10 * appScale
+                                    verticalCenter: parent.verticalCenter
+                                }
 
-                        TimeSelectorButton {
-                            id: eventTime
+                                implicitWidth: popup.width / 3
 
-                            anchors {
-                                right: parent.right
-                                verticalCenter: parent.verticalCenter
+                                font.pixelSize: 14 *appFontSize
+                                textColor: "red"
+                                selectorDate: _eventController.localSystemDateTime()
+                                enabled: false
                             }
 
-                            implicitWidth: is24HourFormat ? parent.width / 6 : parent.width / 3.5
+                            TimeSelectorButton {
+                                id: eventTime
 
-                            font.pixelSize: 14
-                            textColor: isTimeDataChanged ? "red" : "black"
-                            selectorDate: popup.startDt
-                            is24HourFormat: popup.is24HourFormat
-                            selectorHour: popup.incidenceData ? (is24HourFormat ? popup.incidenceData.dtstart.getHours() : popup.incidenceData.dtstart.getHours() % 12) : (is24HourFormat ? popup.startDt.getHours() : popup.startDt.getHours() % 12)
-                            selectorMinutes: popup.incidenceData ? popup.incidenceData.dtstart.getMinutes(
-                                                                       ) : popup.startDt.getMinutes(
-                                                                       )
-                            selectorPm: popup.incidenceData ? (popup.incidenceData.dtstart.getHours(
-                                                                   )
-                                                               >= 12) : (popup.startDt.getHours(
-                                                                             ) >= 12)
-                            enabled: false
-                        }
+                                anchors {
+                                    right: parent.right
+                                    verticalCenter: parent.verticalCenter
+                                }
 
-                        MouseArea {
-                            anchors.fill: parent
+                                font.pixelSize: 14 * appFontSize
+                                textColor: "red"
+                                selectorDate: popup.startDt
+                                is24HourFormat: popup.is24HourFormat
+                                selectorHour: popup.incidenceData ? (is24HourFormat ? popup.incidenceData.dtstart.getHours() : popup.incidenceData.dtstart.getHours() % 12) : (is24HourFormat ? popup.startDt.getHours() : popup.startDt.getHours() % 12)
 
-                            onClicked: {
-                                isTimeDataChanged = true
+                                selectorMinutes: popup.incidenceData ? popup.incidenceData.dtstart.getMinutes() : popup.startDt.getMinutes()
+                                selectorPm: popup.incidenceData ? (popup.incidenceData.dtstart.getHours()>= 12) : (popup.startDt.getHours() >= 12)
+                                enabled: false
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+
+                                onClicked: {
+                                    isTimeDataChanged = true
+                                }
                             }
                         }
                     }
-                }
 
-                PickerMonthView {
-                    id: calendarMonth
+                    PickerMonthView {
+                        id: calendarMonth
 
-                    Layout.fillWidth: true
-                    
-                    Layout.alignment: Qt.AlignLeft
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignLeft
 
-                    visible: true
-                    selectedDate: startDt
-                    selectorHour: startHour
-                    selectorMinutes: startMinute
-                }
-
-
-            }
-        }
-
-        Item {
-            anchors.fill: scroll
-            
-            width:scroll.width
-            height:scroll.height
-
-            visible: isCoverArea
-
-            MouseArea{
-                width:isCoverArea ? parent.width : 0
-                height:isCoverArea ? parent.width : 0
-                onClicked:{
-                    isCoverArea = false
+                        visible: true
+                        selectedDate: startDt
+                        selectorHour: is24HourFormat ? popup.startHour  : popup.startHour  % 12
+                        selectorMinutes: startMinute
+                    }
                 }
             }
+
+            Item {
+                anchors.fill: scroll
+                width:scroll.width
+                height:scroll.height
+
+                visible: isCoverArea
+
+                MouseArea {
+                    width:isCoverArea ? parent.width : 0
+                    height:isCoverArea ? parent.width : 0
+
+                    onClicked:{
+                        isCoverArea = false
+                    }
+                }
+            }
+
+            Rectangle {
+                id: blankRect
+
+                anchors.bottom: stackItem.bottom
+                anchors.bottomMargin: 24 * appScale
+                width: parent.width
+                height: 12 * appScale
+
+                color:"transparent"
+            }
         }
+    }
 
-        Rectangle {
-            id: blankRect
-
-            anchors.bottom: contentItem.bottom
-            anchors.bottomMargin: 24 * appScale
-
-            width: parent.width
-            height: 12 * appScale
-
-            color: "white"
-        }
-
+    Component {
+        id: alertItem
         Item {
             id: alertSelector
 
-            anchors.fill: parent
-
-            visible: false
+            anchors {
+                top: parent.top
+                topMargin: 21 * appScale
+                left: parent.left
+                right: parent.right
+                leftMargin: 10 * appScale
+                rightMargin: 10 * appScale
+            }
 
             ColumnLayout {
                 anchors.fill: parent
 
-                Item {
+                RowLayout {
                     id: alertTtile
 
                     anchors.top: parent.top
-                    anchors.topMargin: popup.height / 30
+                    anchors.left: parent.left
+                    anchors.right: parent.right
 
-                    width: parent.width
-                    height: childrenRect.height
-
-                    Kirigami.Icon {
+                    Kirigami.JIconButton {
                         id: alertBack
 
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-
-                        width: popup.width / 14.42
-                        height: popup.width / 14.42
-
+                        implicitWidth: 32 * appScale
+                        implicitHeight: 31 * appScale
                         source: "qrc://assets/alert_back.png"
 
-                        MouseArea {
-                            anchors.fill: parent
-
-                            onClicked: {
-                                rowTitle.visible = true
-                                scroll.visible = true
-                                alertSelector.visible = false
-                            }
+                        onClicked: {
+                            stackItem.pop()
                         }
                     }
 
                     Kirigami.Label {
-                        anchors.left: alertBack.right
-                        anchors.verticalCenter: parent.verticalCenter
+                        id: alertName
 
-                        font.pixelSize: 20
+                        font.pixelSize: 20 *appFontSize
                         text: i18n("Alert")
+                        color: majorForeground
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                stackItem.pop()
+                            }
+                        }
                     }
                 }
 
@@ -784,12 +707,12 @@ Popup {
 
                     anchors {
                         top: alertTtile.bottom
-                        left: parent.left
-                        right: parent.right
+                        left: alertTtile.left
+                        leftMargin: 10 * appFontSize
+                        rightMargin: 10 * appFontSize
+                        right: alertTtile.right
                         bottom: parent.bottom
-                        topMargin: popup.height / 32.4
-                        leftMargin: popup.width / 15.5
-                        rightMargin: popup.width / 15.5
+                        topMargin: 17 * appScale
                     }
                     Layout.fillWidth: true
 
@@ -805,25 +728,25 @@ Popup {
                             anchors.verticalCenter: parent.verticalCenter
 
                             text: i18n(model.displayName)
-                            font.pixelSize: 14
+                            font.pixelSize: 14 * appFontSize
+                            color: majorForeground
                         }
 
                         Kirigami.Separator {
                             anchors.bottom: parent.bottom
 
                             implicitWidth: parent.width
-                            implicitHeight: 1
+                            implicitHeight: 1 * appScale
 
                             visible: index == listModel.count - 1 ? false : true
-                            color: "#FFE5E5EA"
+                            color: dividerForeground
                         }
 
                         Image {
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-
-                            sourceSize.width: popup.width / 14
-                            sourceSize.height: popup.width / 14
+                            width: popup.width / 14
+                            height: popup.width / 14
 
                             visible: currentAlerTimeName === model.displayName ? true : false
                             source: "qrc:/assets/alert_time_selected.png"
@@ -833,23 +756,19 @@ Popup {
                             anchors.fill: parent
 
                             onClicked: {
+                                stackItem.pop()
+
                                 currentAlerTimeName = model.displayName
                                 isDataChanged = true
                                 currentIndex = index
 
-                                rowTitle.visible = true
-                                scroll.visible = true
-                                alertSelector.visible = false
-                                eventAlert.text = i18n(listModel.get(
-                                            currentIndex).displayName)
+                                eventAlert.text = i18n(listModel.get(currentIndex).displayName)
 
                                 if (listModel.get(currentIndex).value === -1) {
                                     incidenceAlarmsModel.removeAll()
                                 } else {
                                     incidenceAlarmsModel.removeAll()
-                                    incidenceAlarmsModel.addAlarm(
-                                                listModel.get(
-                                                    currentIndex).value)
+                                    incidenceAlarmsModel.addAlarm(listModel.get(currentIndex).value)
                                 }
                             }
                         }
@@ -861,6 +780,7 @@ Popup {
 
     ListModel {
         id: listModel
+
         ListElement {
             displayName: "None"
             value: -1

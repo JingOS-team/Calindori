@@ -42,7 +42,6 @@ void AlarmsModel::loadAlarms()
             m_alarms.append(calendarAlarms);
         }
     }
-    qDebug() << "loadAlarms:" << m_period.from.toString("dd.MM.yyyy hh:mm:ss") << "to" << m_period.to.toString("dd.MM.yyyy hh:mm:ss") << m_alarms.count() << "alarms found";
 
     closeStorages();
 }
@@ -51,8 +50,6 @@ void AlarmsModel::setCalendars()
 {
     m_file_storages.clear();
     m_memory_calendars.clear();
-
-    qDebug() << "setCalendars:" << "Appending calendars" << m_calendar_files.join(",");
 
     for (const auto &cf : qAsConst(m_calendar_files)) {
         MemoryCalendar::Ptr calendar(new MemoryCalendar(QTimeZone::systemTimeZoneId()));
@@ -73,8 +70,6 @@ void AlarmsModel::openLoadStorages()
     for (const auto &fs : qAsConst(m_file_storages)) {
         loaded = fs->open() && fs->load() && loaded;
     }
-    qDebug() << "openLoadStorages:" << "Loaded:" << loaded;
-
 }
 
 void AlarmsModel::closeStorages()
@@ -83,8 +78,6 @@ void AlarmsModel::closeStorages()
     for (const auto &fs : qAsConst(m_file_storages)) {
         closed = fs->close() && closed;
     }
-
-    qDebug() << "closeStorages:" << "Closed:" << closed;
 }
 
 QDateTime AlarmsModel::parentStartDt(const int idx) const

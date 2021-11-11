@@ -1,0 +1,2 @@
+version=4
+https://invent.kde.org/KDE/calindori/tags .*?(\d\S+)/.*.tar\.gz

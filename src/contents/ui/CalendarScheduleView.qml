@@ -13,7 +13,7 @@ import QtQuick.Controls 2.12
 import org.kde.calindori 0.1 as Calindori
 import QtGraphicalEffects 1.15
 
-Item {
+Rectangle {
     id: root
 
     property var currenSelectedUid
@@ -21,8 +21,11 @@ Item {
     property var currentListItem
     property var currentIndex
     property bool isPressedState: false
+    property bool is24HourFormat: timezoneProxy.isSystem24HourFormat
 
     signal deleteClicked
+
+    color: isDarkTheme ? "#FF1D1D1F" : "#FFE8EFFF"
 
     function positionListViewFromDate(d) {
         var index = incidenceModel.getIndexFromIncidence(d)
@@ -83,21 +86,22 @@ Item {
         anchors.fill: parent
 
         visible: !control.visible
-        
+
         Item {
             anchors.centerIn: parent
             width:childrenRect.width
             height:childrenRect.height
 
-            Image {
+            Kirigami.Icon {
                 id: noEventImage
                 anchors{
                     top:parent.top
                     horizontalCenter: parent.horizontalCenter
                 }
 
-                sourceSize.width: root.width / 4.85
-                sourceSize.height: root.width / 4.85
+                width: root.width / 4.85
+                height: root.width / 4.85
+                color: isDarkTheme ? majorForeground : "transparent"
 
                 source: "qrc:/assets/none-event.png"
             }
@@ -112,27 +116,27 @@ Item {
                 width: root.width / 2
                 wrapMode: Text.WordWrap
                 horizontalAlignment: TextInput.AlignHCenter
-                text: "There is no schedule at present"
-                font.pixelSize: 14
-                color: "#4D3C3C43"
+                text: i18n("There is no schedule at present")
+                font.pixelSize: 14 * appFontSize
+                color: isDarkTheme ? "#4DF7F7F7" : "#4D3C3C43"
             }
         }
     }
 
     ParallelAnimation{
         id:parallelAdd
-        
+
         running:false
-        NumberAnimation { target: currentListItem; property: "x"; from: currentListItem.x + currentListItem.width; to: currentListItem.x; duration: 200 }
-        NumberAnimation { target: currentListItem; property: "opacity";from: 0; to: 1; duration: 200}
+        NumberAnimation { target: currentListItem; property: "opacity";from: 0; to: 1; duration: 75}
+        NumberAnimation { target: currentListItem; property: "x"; from: currentListItem.x + currentListItem.width; to: currentListItem.x; duration: 75 }
     }
 
-    ParallelAnimation{
+    ParallelAnimation {
         id:parallelDelete
 
         running:false
-        NumberAnimation { target: currentListItem; property: "x"; from: currentListItem.x; to: currentListItem.x + currentListItem.width; duration: 200 }
-        NumberAnimation { target: currentListItem; property: "opacity";from: 1; to: 0; duration: 200}
+        NumberAnimation { target: currentListItem; property: "opacity";from: 1; to: 0; duration: 75}
+        NumberAnimation { target: currentListItem; property: "x"; from: currentListItem.x; to: currentListItem.x + currentListItem.width; duration: 75 }
 
         onFinished:{
             currentListItem.color = "transparent"
@@ -158,7 +162,7 @@ Item {
 
         clip: true
         focus: true
-        spacing: 5
+        spacing: 5 *  appScale
         highlightFollowsCurrentItem: true
         visible: control.count !== 0
 
@@ -170,14 +174,13 @@ Item {
             id: listItem
 
             width: ListView.view.width
-            height: columnLayout.height + 15
+            height: columnLayout.height + 15 * appFontSize
 
             color: ListView.isCurrentItem ? "#1e767680" : "transparent"
-            radius: 10
+            radius: 10 * appFontSize
 
             Component.onCompleted: {
-                var displayText = incidenceAlarmsModel ? incidenceAlarmsModel.displayText(
-                                                             0) : "-"
+                var displayText = incidenceAlarmsModel ? incidenceAlarmsModel.displayText(0) : "-"
                 incidenceAlarmsLabel.text = i18n(displayText)
             }
 
@@ -200,21 +203,22 @@ Item {
                 onEntered: {
                     control.focus = true
                     control.forceActiveFocus()
-                    if (!isPressedState)
-                         listItem.color = "#0D000000"
+                    if (!isPressedState) {
+                        listItem.color = "#0D000000"
+                    }
                 }
 
                 onExited: {
                     control.focus = false
-                    if (!isPressedState)
-                         listItem.color = (control.currentIndex
-                                           == index) ? "#1e767680" : "transparent"
+                    if (!isPressedState) {
+                        listItem.color = (control.currentIndex == index) ? "#1e767680" : "transparent"
+                    }
                 }
 
                 onCanceled: {
-                     if (!isPressedState)
-                         listItem.color = (control.currentIndex
-                                           == index) ? "#1e767680" : "transparent"
+                    if (!isPressedState) {
+                        listItem.color = (control.currentIndex == index) ? "#1e767680" : "transparent"
+                    }
                 }
 
                 onClicked: {
@@ -227,11 +231,10 @@ Item {
                         currenSelectedUid = model.uid
                         currentDtstart = model.dtstart
                         var jx = mapToItem(rowMain,scheduleLable.x,(scheduleLable.y + scheduleLable.height) / 2)
-                        if(jx.y < 80 * appScale){
+                        if (jx.y < 80 * appScale) {
                             jx = mapToItem(rowMain,scheduleLable.x,(scheduleLable.y + listItem.height / 2) - 20)
                         }
-                        rowMain.scheduleListViewClicked(model,
-                                                        incidenceAlarmsModel,jx)
+                        rowMain.scheduleListViewClicked(model, incidenceAlarmsModel, jx)
                     } else if (mouse.button == Qt.RightButton) {
                         listItem.color = "#1e767680";
                         isPressedState = true
@@ -240,8 +243,8 @@ Item {
                         control.currentIndex = index
                         currenSelectedUid = model.uid
                         currentDtstart = model.dtstart
-                        var jx = mapToItem(rowMain, mouse.x, mouse.y)
-                        editDialogView.popup(rowMain, jx.x, jx.y)
+                        var jx = mapToItem(listItem, mouse.x, mouse.y)
+                        editDialogView.popup(listItem,(listItem.width - editDialogView.width) / 2,jx.y)
                     }
                 }
 
@@ -251,8 +254,8 @@ Item {
                     control.currentIndex = index
                     currenSelectedUid = model.uid
                     currentDtstart = model.dtstart
-                    var jx = mapToItem(rowMain, mouse.x, mouse.y)
-                    editDialogView.popup(rowMain, jx.x, jx.y)
+                    var jx = mapToItem(listItem, mouse.x, mouse.y)
+                    editDialogView.popup(listItem,(listItem.width - editDialogView.width) / 2,jx.y)
                 }
             }
 
@@ -263,78 +266,91 @@ Item {
                 anchors.topMargin: root.width / 25
 
                 width: root.width / 1.11
-                height: control.width / 3.3 
+                height: childrenRect.height
 
-                spacing:3
+                spacing:3 * appScale
 
                 RowLayout {
-                    
                     anchors.top: parent.top
                     anchors.left: parent.left
-                    anchors.leftMargin: 10
+                    anchors.leftMargin: 10 * appScale
 
                     Layout.preferredWidth: parent.width
                     Layout.fillWidth: true
                     height:scheduleLable.height
 
                     Kirigami.Separator {
-                        Layout.preferredWidth: 3
+                        Layout.preferredWidth: 3 * appScale
                         Layout.preferredHeight: scheduleLable.height
 
                         color: "#E95B4E"
-                        radius: 2
+                        radius: 2 * appScale
                     }
 
                     Kirigami.Label {
                         id: scheduleLable
 
                         anchors.left: parent.left
-                        anchors.leftMargin: 10
+                        anchors.leftMargin: 10 * appScale
                         anchors.verticalCenter: parent.verticalCenter
 
                         Layout.preferredWidth: root.width / 1.28
 
                         text: model && model.summary
-                        font.pixelSize: 14
+                        font.pixelSize: 14 * appFontSize
                         wrapMode: Text.Wrap
-                        color: "black"
+                        color: majorForeground
                     }
                 }
 
-                RowLayout {
-
+                Row {
                     anchors.left: parent.left
                     anchors.leftMargin: root.width / 12
 
-                    Layout.fillWidth: true
+                    width:columnLayout.width
                     height:root.width / 18.125
-                    
+
+                    spacing:3 * appScale
+
                     Image {
-                        sourceSize.width: root.width / 18.125
-                        sourceSize.height: root.width / 18.125
+                        anchors.verticalCenter:parent.verticalCenter
+
+                        width: 16 * appScale
+                        height: 16 * appScale
+
                         source: "qrc:/assets/edit_event_summary.png"
                     }
 
                     Kirigami.Label {
                         id: startLable
 
-                        text: "%1 %2".arg(model.displayStartDate).arg(
-                                  model.displayStartTime)
-                        font.pixelSize: 11
-                        opacity: 0.6
+                        text: "%1 %2".arg(model.displayStartDate).arg(model.displayStartTime)
+                        font.pixelSize: 11 * appFontSize
+                        color: minorForeground
+
+                        Connections {
+                            target: root
+                            onIs24HourFormatChanged: {
+                                startLable.text = "%1 %2".arg(model.displayStartDate).arg(model.displayStartTime)
+                            }
+                        }
                     }
                 }
 
-                RowLayout {
+                Row {
                     anchors.left: parent.left
                     anchors.leftMargin: root.width / 12
 
-                    Layout.fillWidth: true
+                    width:columnLayout.width
                     height:root.width / 18.125
 
+                    spacing:3 * appScale
+
                     Image {
-                        sourceSize.width: root.width / 18.125
-                        sourceSize.height: root.width / 18.125
+                        anchors.verticalCenter:parent.verticalCenter
+
+                        width: 16 * appScale
+                        height: 16 * appScale
 
                         source: "qrc:/assets/event_alarm.png"
                     }
@@ -342,8 +358,8 @@ Item {
                     Kirigami.Label {
                         id: incidenceAlarmsLabel
 
-                        font.pixelSize: 11
-                        opacity: 0.6
+                        font.pixelSize: 11 * appFontSize
+                        color: minorForeground
                     }
                 }
 
@@ -362,33 +378,38 @@ Item {
             delegate: Item {
                 Layout.fillWidth: true
 
-                height: 62 * appScale
+                height: 36 * appScale
 
                 Text {
                     anchors.left: parent.left
                     anchors.leftMargin: root.width / 32
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 5
+                    anchors.bottomMargin: 5 * appScale
 
                     text: i18n(section)
                     color: "#E95B4E"
-                    font.pixelSize: 15
+                    font.pixelSize: 15 * appFontSize
                     font.bold: true
                 }
             }
         }
     }
 
-    EditDialogView {
+    Kirigami.JPopupMenu {
         id: editDialogView
+        width: 160 * appScale
 
-        onDeleteClicked: {
-            deleteDialog.open()
+        Action {
+            text: i18n("Delete")
+            icon.source:  "qrc:/assets/edit_delete_black.png"
+            onTriggered: {
+                deleteDialog.open()
+            }
         }
 
-        onMenuClosed: {
-            if (!deleteClick)
-                setCurrentListViewIndex(-1)
+        onClosed: {
+            isPressedState = false
+            currentListItem.color = "transparent"
         }
     }
 
@@ -402,7 +423,7 @@ Item {
         signal dialogLeftClicked
 
         title: i18n("Delete")
-        font.pixelSize: 14
+        font.pixelSize: 14 * appFontSize
         text: i18n("Are you sure you want to delete this event?")
         rightButtonText: i18n("Delete")
         leftButtonText: i18n("Cancel")
@@ -411,11 +432,11 @@ Item {
         closePolicy: Popup.CloseOnEscape
 
         onRightButtonClicked: {
-            currentListItem.color = "white"
+            currentListItem.color = "transparent"
             parallelDelete.running = true
 
             deleteDialog.close()
-            
+
         }
 
         onLeftButtonClicked: {

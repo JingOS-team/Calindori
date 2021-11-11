@@ -1,8 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
+ * Copyright (C) 2021 Beijing Jingling Information System Technology Co., Ltd. All rights reserved.
  *
- * SPDX-License-Identifier: GPL-3.0-or-later
+ * Authors:
+ * Bob <pengbo·wu@jingos.com>
+ *
  */
+
 import QtQuick 2.0
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.0 as Controls2
@@ -91,7 +94,7 @@ ColumnLayout {
                     }]
                 value: monthNumber
                 pathItemCount: 3
-                displayFontSize: 17
+                displayFontSize: 17 * appFontSize
 
                 onViewMove: {
                     popup.isTimeDataChanged = true
@@ -129,8 +132,8 @@ ColumnLayout {
                     anchors.top: parent.top
                     anchors.horizontalCenter: parent.horizontalCenter
 
-                    sourceSize.width: 28 * appScale
-                    sourceSize.height: 28 * appScale
+                    width: 28 * appScale
+                    height: 28 * appScale
 
                     source: "qrc:/assets/triangle_up.png"
                 }
@@ -161,8 +164,8 @@ ColumnLayout {
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
 
-                    sourceSize.width: 28 * appScale
-                    sourceSize.height: 28 * appScale
+                    width: 28 * appScale
+                    height: 28 * appScale
 
                     source: "qrc:/assets/triangle_down.png"
                 }
@@ -192,7 +195,6 @@ ColumnLayout {
                 }
 
                 onReleased: {
-
                     popup.isCoverArea = false
                     propagateComposedEvents = true
                     preventStealing = false
@@ -247,7 +249,11 @@ ColumnLayout {
                         if (contentY != 0) {
                             var count = parseInt(contentY / 250)
                             if (Math.abs(contentY) < 300) {
-                                count = 1
+                                if(contentY > 0){
+                                    count = 1
+                                }else{
+                                    count = -1
+                                }
                             }
                             isReduce = false
                             contentY = 0
@@ -290,7 +296,7 @@ ColumnLayout {
                 starIndexZero: false
                 bgShow: true
                 pathItemCount: 3
-                displayFontSize: 17
+                displayFontSize: 17 *appScale
                 value: yearNumber
 
                 model: {
@@ -327,7 +333,7 @@ ColumnLayout {
                     onClicked: {
                         popup.isTimeDataChanged = true
                         yearNumber++
-                        if (yearNumber > 2100) {
+                        if (yearNumber > 2099) {
                             yearNumber = 1900
                         }
                         mm.setYear(yearNumber)
@@ -339,8 +345,8 @@ ColumnLayout {
                     anchors.top: parent.top
                     anchors.horizontalCenter: parent.horizontalCenter
 
-                    sourceSize.width: 28 * appScale
-                    sourceSize.height: 28 * appScale
+                    width: 28 * appScale
+                    height: 28 * appScale
 
                     source: "qrc:/assets/triangle_up.png"
                 }
@@ -351,7 +357,7 @@ ColumnLayout {
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 width: yearRect.width / 2
-                height: wheelView2.height / 3 + 30
+                height: wheelView2.height / 3 + 30 * appScale
 
                 MouseArea {
                     anchors.fill: parent
@@ -360,7 +366,7 @@ ColumnLayout {
                         popup.isTimeDataChanged = true
                         yearNumber--
                         if (yearNumber < 1900) {
-                            yearNumber = 2100
+                            yearNumber = 2099
                         }
                         mm.setYear(yearNumber)
                         notifyDateChanged()
@@ -371,8 +377,8 @@ ColumnLayout {
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
 
-                    sourceSize.width: 28 * appScale
-                    sourceSize.height: 28 * appScale
+                    width: 28 * appScale
+                    height: 28 * appScale
 
                     source: "qrc:/assets/triangle_down.png"
                 }
@@ -413,20 +419,20 @@ ColumnLayout {
                     if (count >= 1) {
                         yearNumber = yearNumber - count
                         if (yearNumber < 1900) {
-                            yearNumber = 2100
+                            yearNumber = 2099
                         }
                         mm.setYear(yearNumber)
                         notifyDateChanged()
                     } else if (count <= -1) {
                         yearNumber = yearNumber + Math.abs(count)
-                        if (yearNumber > 2100) {
+                        if (yearNumber > 2099) {
                             yearNumber = 1900
                         }
                         mm.setYear(yearNumber)
                         notifyDateChanged()
                     }
                 }
-                
+
                 onWheel: {
                     popup.isTimeDataChanged = true
                     var wY = wheel.angleDelta.y
@@ -434,14 +440,14 @@ ColumnLayout {
                     if (wY == 120) {
                         yearNumber = yearNumber - 1
                         if (yearNumber < 1900) {
-                            yearNumber = 2100
+                            yearNumber = 2099
                         }
                         mm.setYear(yearNumber)
                         notifyDateChanged()
                         return
                     } else if (wY == -120) {
                         yearNumber = yearNumber + 1
-                        if (yearNumber > 2100) {
+                        if (yearNumber > 2099) {
                             yearNumber = 1900
                         }
                         mm.setYear(yearNumber)
@@ -457,20 +463,24 @@ ColumnLayout {
                         if (contentY != 0 & Math.abs(contentY) > 120) {
                             var count = parseInt(contentY / 250)
                             if (Math.abs(contentY) < 300) {
-                                count = 1
+                                if(contentY > 0){
+                                    count = 1
+                                }else{
+                                    count = -1
+                                }
                             }
                             isReduce = false
                             contentY = 0
                             if (count >= 1) {
                                 yearNumber = yearNumber - count
                                 if (yearNumber < 1900) {
-                                    yearNumber = 2100
+                                    yearNumber = 2099
                                 }
                                 mm.setYear(yearNumber)
                                 notifyDateChanged()
                             } else if (count <= -1) {
                                 yearNumber = yearNumber + Math.abs(count)
-                                if (yearNumber > 2100) {
+                                if (yearNumber > 2099) {
                                     yearNumber = 1900
                                 }
                                 mm.setYear(yearNumber)

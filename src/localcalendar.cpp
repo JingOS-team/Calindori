@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2018 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Bob <pengbo·wu@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -63,7 +64,6 @@ int LocalCalendar::todosCount(const QDate &date) const
 
 void LocalCalendar::deleteCalendar()
 {
-    qDebug() << "Deleting calendar at " << m_fullpath;
     QFile calendarFile(m_fullpath);
 
     if (calendarFile.exists()) {
@@ -84,7 +84,6 @@ int LocalCalendar::eventsCount(const QDate &date) const
 bool LocalCalendar::save()
 {
     if (m_cal_storage->save()) {
-        qDebug() << "Saving to file";
         m_fs_sync_dt = QDateTime::currentDateTime();
         m_alarm_checker->scheduleAlarmCheck();
         return true;
@@ -171,17 +170,13 @@ QString LocalCalendar::fileNameFromUrl(const QUrl &sourcePath)
 void LocalCalendar::reloadStorage()
 {
     if (m_fullpath.isEmpty()) {
-        qDebug() << "Not ready for reload, file path not set";
         return;
     }
 
     QFileInfo storageFileInfo { m_fullpath };
 
-    qDebug() << "Last memory-fs sync: " << m_fs_sync_dt;
-    qDebug() << "Filed modified: " << storageFileInfo.lastModified();
-
     if (storageFileInfo.lastModified() <= m_fs_sync_dt) {
-        qDebug() << "Reload not needed, the calendar file has not been updated";
+        return;
     } else {
         loadStorage();
     }
@@ -190,7 +185,6 @@ void LocalCalendar::reloadStorage()
 bool LocalCalendar::loadStorage()
 {
     if (m_fullpath.isEmpty()) {
-        qDebug() << "Not ready for load, file path not set";
         return false;
     }
 
@@ -202,11 +196,9 @@ bool LocalCalendar::loadStorage()
 
     if (!calendarFile.exists()) {
         bool saved = storage->save();
-        qDebug() << "New calendar file created: " << saved;
     }
 
     if (storage->load()) {
-        qDebug() << "Storage file loaded";
         m_cal_storage = storage;
         m_calendar = calendar;
         m_fs_sync_dt = QDateTime::currentDateTime();

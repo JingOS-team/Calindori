@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2019 Dimitris Kardarakos <dimkard@posteo.net>
+ *                         2021 Bob <pengbo·wu@jingos.com>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -11,6 +12,7 @@
 
 #include <QObject>
 #include <QVariantMap>
+#include <QDBusMessage>
 
 class LocalCalendar;
 
@@ -30,12 +32,16 @@ public:
      * @return QDateTime
      */
     Q_INVOKABLE QDateTime localSystemDateTime() const;
+
+    Q_INVOKABLE bool getRegionTimeFormat()const;
     /**
      * @brief Validate an event before saving
      *
      * @return A QVariantMap response to be handled by the caller
      */
     Q_INVOKABLE QVariantMap validate(const QVariantMap &eventMap) const;
+private:
+    QDBusMessage m_dbusMessage;
 
 };
 #endif

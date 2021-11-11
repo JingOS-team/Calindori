@@ -346,6 +346,9 @@ msgstr ""
 msgid "New Event"
 msgstr "新建日程"
 
+msgid "New Schedule"
+msgstr "新日程"
+
 #: src/contents/ui/EventsCardView.qml:46
 #, kde-format
 msgid "No events scheduled for %1"
@@ -932,5 +935,11 @@ msgstr "星期六"
 
 msgid "Sunday"
 msgstr "星期日"
+
+msgid "There is no schedule at present"
+msgstr "目前没有日程"
+
+msgid "24 Hours"
+msgstr "24 小时"
 
 

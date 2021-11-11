@@ -1,14 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
+ * Copyright (C) 2021 Beijing Jingling Information System Technology Co., Ltd. All rights reserved.
  *
- * SPDX-License-Identifier: GPL-3.0-or-later
+ * Authors:
+ * Bob <pengbo·wu@jingos.com>
+ *
  */
 
 import QtQuick 2.7
 import QtQuick.Controls 2.0 as Controls2
 import QtQuick.Layouts 1.3
 import org.kde.kirigami 2.0 as Kirigami
-import org.kde.kirigami 2.3 as Kirigami
+import org.kde.kirigami 2.15 as Kirigami
 import org.kde.calindori 0.1 as Calindori
 
 Item {
@@ -25,7 +27,7 @@ Item {
     property alias selectorHour: timeSelectWheelView.hourNumber
     property alias selectorMinutes: timeSelectWheelView.minutesNumber
     property var daysModel
-    property bool is24HourFormat
+    property bool is24HourFormat: timezoneProxy.isSystem24HourFormat
     property bool showHeader: false
     property bool showMonthName: true
     property bool showYear: true
@@ -34,6 +36,21 @@ Item {
 
     width: parent.width
     height: childrenRect.height
+
+    ParallelAnimation{
+        id: parallelLeft
+
+        NumberAnimation { target: monthHeader; property: "x"; from: 10; to: 0; duration: 200 }
+        NumberAnimation { target: monthHeader; property: "opacity";from: 0; to: 1; duration: 200 }
+    }
+
+    ParallelAnimation{
+        id: parallelRight
+
+        NumberAnimation { target: monthHeader; property: "x"; from: -10; to: 0; duration: 200 }
+        NumberAnimation { target: monthHeader; property: "opacity";from: 0; to: 1; duration: 200 }
+    }
+
 
     ColumnLayout {
 
@@ -49,35 +66,36 @@ Item {
 
                 anchors.left: parent.left
 
-                hourNumber: selectorHour
+                //hourNumber: selectorHour
                 pmSelected: customMonthView.pmSelected
                 is24HourFormat: customMonthView.is24HourFormat
-                minutesNumber: selectorMinutes
+                //minutesNumber: selectorMinutes
             }
         }
 
         ColumnLayout {
             anchors.top: selectedTimeHeading.bottom
-            anchors.topMargin: 50 * appScale
+            anchors.topMargin: 25 * appScale
 
-            spacing: 20 * appScale
+            spacing: 12 * appScale
 
-            RowLayout {
+            Item {
                 id: selectedDayHeading
 
                 height: popup.width / 14
-                width: dayRectWidth
-                Layout.preferredWidth: parent.width
-
-                Image {
+                width: popup.width - (popup.commMargin * 2)
+                //Layout.preferredWidth: parent.width
+                Kirigami.Icon {
                     id:swith_img
 
-                    sourceSize.width: 22
-                    sourceSize.height: 22
+                    width: 22 * appScale
+                    height: 22 * appScale
 
                     Layout.alignment: Qt.AlignLeft
-                    
+                    anchors.verticalCenter:parent.verticalCenter
+
                     source: isWheelViewShowing ? "qrc:/assets/calendar_selected.png" : "qrc:/assets/calendar_switch.png"
+                    color: isDarkTheme ? majorForeground : transparent
 
                     MouseArea {
                         anchors.fill: parent
@@ -92,78 +110,89 @@ Item {
                     }
                 }
 
-                RowLayout {
-                    anchors{
-                        left:swith_img.right
-                        right:rowMonthChange.left
-                    }
+                Item{
+                    id: monthHeader
 
-                    Layout.alignment: Qt.AlignHCenter
-
-                    RowLayout{
-                        anchors.horizontalCenter: parent.horizontalCenter
-
-                        spacing: 5 * appScale
-
+                    anchors.centerIn: parent
+                    width: childrenRect.width
+                    height:22 * appScale
+                    RowLayout {
+                        anchors.verticalCenter:parent.verticalCenter
+                        layoutDirection: !_eventController.getRegionTimeFormat() ? Qt.LeftToRight : Qt.RightToLeft
                         Text {
+                            id: monthText
+
                             visible: showMonthName
-                            font.pixelSize: 14
-                            text: i18n(displayedMonthName)
+                            font.pixelSize: 14 * appFontSize
+                            text: displayedMonthName
                             font.bold: true
+                            color: majorForeground
                         }
 
                         Text {
                             visible: showYear
-                            font.pixelSize: 14
-                            text: displayedYear
+                            font.pixelSize: 14 * appFontSize
+                            text: _eventController.getRegionTimeFormat() ? displayedYear + "年" : displayedYear
                             font.bold: true
+                            color: majorForeground
                         }
+                    }
 
-                        MouseArea {
-                            anchors.fill: parent
+                    MouseArea {
+                        anchors.fill: parent
 
-                            onClicked: {
-                                if (isWheelViewShowing) {
-                                    initWidgetState()
-                                } else {
-                                    setWheelViewVisible()
-                                }
+                        onClicked: {
+                            if (isWheelViewShowing) {
+                                initWidgetState()
+                            } else {
+                                setWheelViewVisible()
                             }
                         }
                     }
                 }
 
-                RowLayout {
+                Row {
                     id: rowMonthChange
+                    width:childrenRect.width
+                    height:22 * appScale
+                    anchors.right:parent.right
 
-                    Layout.alignment: Qt.AlignRight
+                    Kirigami.Icon {
+                        anchors.verticalCenter:parent.verticalCenter
 
-                    Image {
-                        sourceSize.width: popup.width / 14
-                        sourceSize.height: popup.width / 14
+                        width: 22 * appScale
+                        height: 22 * appScale
 
                         source: "qrc:/assets/arrow_left.png"
+                        color: isDarkTheme ? majorForeground : transparent
+
                         MouseArea {
                             anchors.fill: parent
 
                             onClicked: {
                                 mm.goPreviousMonth()
                                 updateWheelViewData()
+                                parallelLeft.running = true
                             }
                         }
                     }
 
-                    Image {
-                        sourceSize.width: popup.width / 14
-                        sourceSize.height: popup.width / 14
+                    Kirigami.Icon {
+                        anchors.verticalCenter:parent.verticalCenter
+
+                        width: 22 * appScale
+                        height: 22 * appScale
 
                         source: "qrc:/assets/arrow_right.png"
+                        color: isDarkTheme ? majorForeground : transparent
+
                         MouseArea {
                             anchors.fill: parent
 
                             onClicked: {
                                 mm.goNextMonth()
                                 updateWheelViewData()
+                                parallelRight.running = true
                             }
                         }
                     }
@@ -180,26 +209,21 @@ Item {
                         Layout.fillWidth: true
                         Layout.preferredHeight: weekLabel.height
 
-                        width: customMonthView.dayRectWidth - 10
+                        width: customMonthView.dayRectWidth - 10 * appScale
 
                         Controls2.Label {
                             id: weekLabel
 
                             anchors.centerIn: parent
 
-                            color: "#4D000000"
-                            text: i18n(customMonthView.applicationLocale.dayName(
-                                      ((model.index
-                                        + customMonthView.applicationLocale.firstDayOfWeek)
-                                       % customMonthView.days),
-                                      Locale.ShortFormat))
-                            font.pixelSize: 11
-                            
+                            color: minorForeground
+                            text: customMonthView.applicationLocale.dayName(((model.index + customMonthView.applicationLocale.firstDayOfWeek) % customMonthView.days), Locale.ShortFormat)
+                            font.pixelSize: 11 *appFontSize
                         }
                     }
                 }
             }
-        
+
             Grid {
                 id: grid
 
@@ -212,6 +236,26 @@ Item {
 
                 columns: root.days
                 rows: root.weeks
+
+                add: Transition {
+                    id: amin
+
+                    NumberAnimation {
+                        target: grid
+                        property: "y"
+                        from: 10
+                        to: 0
+                        duration: 200
+                    }
+
+                    NumberAnimation {
+                        target: grid
+                        property: "opacity"
+                        from: 0
+                        to: 1
+                        duration: 200
+                    }
+                }
 
                 Repeater {
                     model: root.daysModel
@@ -234,13 +278,20 @@ Item {
                                                      root.selectedDate.getHours(),
                                                      root.selectedDate.getMinutes(), 0)
                         }
+                        onNextMonth: {
+                            parallelRight.running = true
+                        }
+
+                        onPreviousMonth: {
+                            parallelLeft.running = true
+                        }
                     }
-                }  
+                }
             }
 
             DateSelectWheelView {
                 id: dateSelectWheelView
-                
+
                 visible: isWheelViewShowing
                 monthNumber: mm.month - 1
                 yearNumber: mm.year

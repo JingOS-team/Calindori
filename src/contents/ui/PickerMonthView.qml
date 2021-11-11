@@ -23,7 +23,7 @@ CustomMonthView {
     displayedYear: mm.year
     displayedMonthName: _appLocale.standaloneMonthName(mm.month - 1)
     daysModel: mm
-    is24HourFormat: mm.is24HourFormat()
+    is24HourFormat: timezoneProxy.isSystem24HourFormat
 
     applicationLocale: _appLocale
     selectedDate: _eventController.localSystemDateTime()
@@ -34,6 +34,7 @@ CustomMonthView {
 
     DaysOfMonthModel {
         id: mm
+
         year: selectedDate.getFullYear()
         month: selectedDate.getMonth() + 1
     }

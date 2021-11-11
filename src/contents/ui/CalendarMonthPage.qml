@@ -57,7 +57,7 @@ Kirigami.Page {
         signal eventAddCompleted
         signal eventCancelCompleted
 
-        color : "#FFE8EFFF"
+        color : settingMinorBackground
 
         CalendarMonthView {
             id: calendarMonthView

@@ -2,7 +2,7 @@
     SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
     SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Calendar< img src="Jcalendar.svg"/>
+# Calindori <img src="./icons/Jcalendar.svg"/>
 
 Calendar application for JingOS.
 
@@ -10,8 +10,8 @@ Calendar application for JingOS.
 
 ## Features
 
-* Calendar is a touch friendly and beautiful calendar application. It offers:
-* 
+* Calindori is a touch friendly and beautiful calendar application. It offers:
+*
   * Monthly agenda
   * Multiple calendars
   * Event management
@@ -30,14 +30,14 @@ Calendar application for JingOS.
   * Font
   * Icon
   * Picture
-  
+
 * The calendars that the application handles follow the [ical](https://tools.ietf.org/html/rfc5545) standard.
 
 
 
 ## Screenshots
 
-Calendar:
+Calindori:
 
 ![](screenshots/calendar_screenshot.png)
 
@@ -51,9 +51,9 @@ JingOS:
 
 * Home page: https://www.jingos.com/
 
-* Project page: https://github.com/JingOS-team/calendar
+* Project page: https://invent.kde.org/plasma-mobile/calindori
 
-* Issues: https://github.com/JingOS-team/calendar/issues
+* Issues: https://invent.kde.org/plasma-mobile/calindori/-/issues
 
 * Development channel: https://forum.jingos.com/
 
@@ -61,7 +61,7 @@ JingOS:
 
 ## Dependencies
 
-* Qt5 
+* Qt5
 
 * Cmake
 
@@ -77,14 +77,14 @@ JingOS:
 
 ## Build
 
-To build Calendar from source on Linux, execute the below commands.
+To build Calindori from source on Linux, execute the below commands.
 
 
 
 ### Compile
 
 ```sh
-cd calendar
+cd Calindori
 mkdir build
 cd build
 cmake ..

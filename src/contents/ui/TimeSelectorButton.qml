@@ -19,6 +19,8 @@ Controls2.ToolButton {
     property string textColor
     property bool is24HourFormat
 
+    implicitWidth: text.width
+
     onClicked: {
         timePickerSheet.hours = selectorHour
         timePickerSheet.minutes = selectorMinutes
@@ -27,27 +29,29 @@ Controls2.ToolButton {
     }
 
     Text {
+        id: text
+
         anchors.verticalCenter: parent.verticalCenter
         anchors.right: parent.right
 
         opacity: 0.6
-        font.pixelSize: 14
+        font.pixelSize: 14 * appFontSize
         color: textColor
 
         text: {
-            if (!isNaN(selectorDate)) {
-                var textDt = selectorDate
-                textDt.setHours(
-                            is24HourFormat ? selectorHour : selectorHour % 12)
-                textDt.setMinutes(selectorMinutes)
-                textDt.setSeconds(0)
-
-                return textDt.toLocaleTimeString(
-                            _appLocale,
-                            "HH:mm") + (!is24HourFormat ? (selectorPm ? " PM" : " AM") : "")
-            } else {
-                return "00:00"
+            selectorHour = is24HourFormat ? selectorHour : (selectorHour % 12 == 0 ? 12 : selectorHour % 12)
+            var hour = selectorHour / 10 < 1 ? "0" + selectorHour : selectorHour
+            var minutes = selectorMinutes / 10 < 1 ? "0" + selectorMinutes : selectorMinutes
+            if (is24HourFormat) {
+                return hour + ":" + minutes;
             }
+            var pamStr = ""
+            if (_eventController.getRegionTimeFormat() == true) {
+                pamStr = selectorPm ? " 下午" : " 上午"
+            } else {
+                pamStr = selectorPm ? " PM" : " AM"
+            }
+            return hour + ":" + minutes + pamStr
         }
     }
 
@@ -55,7 +59,6 @@ Controls2.ToolButton {
         id: timePickerSheet
 
         headerText: root.selectorTitle
-
         onDatePicked: {
             root.selectorHour = timePickerSheet.hours
             root.selectorMinutes = timePickerSheet.minutes

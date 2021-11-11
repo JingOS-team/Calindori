@@ -27,7 +27,6 @@ CalindoriConfig::CalindoriConfig(QObject *parent)
     , d(new Private)
 {
     if ((d->config.group("general").readEntry("calendars", QString())).isEmpty() && (d->config.group("general").readEntry("externalCalendars", QString())).isEmpty()) {
-        qDebug() << "No calendar found, creating a default one";
         addInternalCalendar("personal");
         setActiveCalendar("personal");
         d->config.sync();
@@ -187,8 +186,6 @@ void CalindoriConfig::removeCalendar(const QString &calendar)
 QString CalindoriConfig::calendarFile(const QString &calendarName)
 {
     d->config.reparseConfiguration();
-
-    qDebug() << "calendar: " << calendarName;
 
     if (d->config.hasGroup(calendarName) && d->config.group(calendarName).hasKey("file")) {
         return d->config.group(calendarName).readEntry("file");

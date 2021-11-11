@@ -81,5 +81,6 @@ private:
 
 public Q_SLOTS:
     void serviceWatcherFinished(const QString &serviceName);
+    void clockUpdated();
 };
 #endif

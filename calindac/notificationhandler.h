@@ -28,6 +28,8 @@ public:
      */
     void sendNotifications();
 
+    void sendNotificationsForUid(const QString &uid);
+
     /**
      * @brief Creates an alarm notification object for the Incidence with \p uid. It sets the text to be displayed according to \p text. It adds this alarm notification to the internal list of active notifications (the list of notifications that should be sent at the next check).
      */
@@ -76,10 +78,11 @@ public Q_SLOTS:
      * @brief Suspends the display of the alarm \p notification, by removing it from the list of active and putting it to the list of suspended notifications. Remind time is set according to configuration.
      */
     void suspend(AlarmNotification *const notification);
+    void eventRemove(const QString &uid);
 
-private:
     void sendActiveNotifications();
     void sendSuspendedNotifications();
+private:
 
     QHash<QString, AlarmNotification *> m_active_notifications;
     QHash<QString, AlarmNotification *> m_suspended_notifications;

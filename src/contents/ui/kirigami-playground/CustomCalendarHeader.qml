@@ -14,7 +14,7 @@ ColumnLayout {
     id: customCalendarHeader
 
     property date headerDate
-    property int yearNumber
+    property var yearNumber
     property var dayNumber
     property int headerTodosCount
     property int headerEventsCount
@@ -45,9 +45,9 @@ ColumnLayout {
 
             RowLayout {
                 id:dateItem
-                
+                layoutDirection: !_eventController.getRegionTimeFormat() ? Qt.LeftToRight : Qt.RightToLeft
                 Controls2.Label {
-                    font.pixelSize: 28
+                    font.pixelSize: 28 * appFontSize
                     text: monthView.displayedMonthName
                     font.bold:true
                 }
@@ -55,7 +55,7 @@ ColumnLayout {
                 Controls2.Label {
                     id: yearNumberLa
 
-                    font.pixelSize: 28
+                    font.pixelSize: 28 * appFontSize
                     text: yearNumber
                 }
             }
@@ -72,8 +72,8 @@ ColumnLayout {
             anchors.right: parent.right
             
 
-            implicitWidth: 38 * appScale + 10
-            implicitHeight: 38 * appScale  + 10
+            implicitWidth: 28 * appScale + 10
+            implicitHeight: 28 * appScale  + 10
 
             source: "qrc:/assets/add_reminder.png"
 
@@ -89,7 +89,7 @@ ColumnLayout {
 
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: addReminder.left
-            anchors.rightMargin: 48 * appScale
+            anchors.rightMargin: 35 * appScale
 
             implicitWidth: 80 * appScale + 10
             implicitHeight: 35 * appScale + 10
@@ -98,9 +98,9 @@ ColumnLayout {
                 anchors.centerIn: parent
 
                 text: i18n("Today")
-                font.pixelSize: 16
+                font.pixelSize: 16 * appFontSize
                 // font.pixelSize: selectedNumber.width / 2 - 5
-                color: "black"
+                color: majorForeground
             }
 
             onClicked: {

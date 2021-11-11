@@ -1,10 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2021 Wang Rui <wangrui@jingos.com>
+ * Copyright (C) 2021 Beijing Jingling Information System Technology Co., Ltd. All rights reserved.
  *
- * SPDX-License-Identifier: GPL-3.0-or-later
+ * Authors:
+ * Bob <pengbo·wu@jingos.com>
+ *
  */
 
 import QtQuick 2.0
+import QtQml 2.12
 
 PathView {
     id: root
@@ -33,6 +36,21 @@ PathView {
         viewMove(model[currentIndex].value)
     }
 
+    onModelChanged: {
+        timer.restart()
+    }
+
+    Timer {
+        id: timer
+
+        interval: 1000
+        repeat: false
+
+        onTriggered: {
+            findCurrentIndex()
+        }
+    }
+
     onValueChanged: {
         findCurrentIndex()
     }
@@ -59,6 +77,7 @@ PathView {
             font.pixelSize: displayFontSize
             text: modelData.display
             opacity: currentIndex == index ? 1 : 0.3
+            color: majorForeground
         }
     }
 
